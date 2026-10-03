@@ -1,0 +1,284 @@
+// Logistics Market Intelligence & AHP Carrier Decision Dashboard
+// Prisma 7 + PostgreSQL (Supabase). Connection URL lives in prisma7.config.ts.
+
+generator client {
+  provider = "prisma-client"
+  output   = "../src/generated/prisma"
+}
+
+datasource db {
+  provider = "postgresql"
+}
+
+// ---------------------------------------------------------------------------
+// Enums
+// ---------------------------------------------------------------------------
+
+enum IndexCode {
+  WCI // Drewry World Container Index
+  SCFI // Shanghai Containerized Freight Index
+  BDI // Baltic Dry Index
+  BDRY // Breakwave Dry Bulk Shipping ETF
+}
+
+enum IndexUnit {
+  USD_PER_FEU
+  POINTS
+  USD
+}
+
+/// Where a data point came from. Shown in the UI so a reader can tell a
+/// scraped figure from one a human typed in.
+enum DataSource {
+  SCRAPER
+  MANUAL
+  YAHOO
+  CSV_IMPORT
+}
+
+enum RiskLevel {
+  LOW // < 2 days
+  MODERATE // 2-4 days
+  HIGH // > 4 days
+}
+
+enum DisruptionTag {
+  GEOPOLITICS
+  LABOR
+  CHOKEPOINT
+  WEATHER
+  CAPACITY
+  RATE_MOVE
+}
+
+enum NewsSeverity {
+  INFO
+  WATCH
+  ALERT
+}
+
+enum RunStatus {
+  SUCCESS
+  PARTIAL
+  FAILED
+}
+
+enum UserRole {
+  VIEWER
+  ANALYST
+  ADMIN
+}
+
+// ---------------------------------------------------------------------------
+// Module 1 - Freight rate benchmarking
+// ---------------------------------------------------------------------------
+
+/// One observation of one index on one route for one period.
+/// WoW / MoM / moving averages are NOT stored: they are derived in
+/// `lib/metrics.ts` so a corrected back-value cannot leave stale deltas behind.
+model FreightIndex {
+  id          String     @id @default(cuid())
+  indexCode   IndexCode
+  /// Lane identifier, e.g. COMPOSITE, SHA_RTM, SHA_LAX. Free-form so new
+  /// lanes do not require a migration.
+  routeCode   String     @default("COMPOSITE")
+  /// The date the index itself refers to, not the time we fetched it.
+  periodDate  DateTime   @db.Date
+  value       Decimal    @db.Decimal(12, 2)
+  unit        IndexUnit
+  source      DataSource
+  enteredById String?
+  /// Raw payload kept for forensics when a parse later turns out wrong.
+  rawSnapshot Json?
+  createdAt   DateTime   @default(now())
+  updatedAt   DateTime   @updatedAt
+
+  enteredBy UserProfile? @relation(fields: [enteredById], references: [id], onDelete: SetNull)
+
+  @@unique([indexCode, routeCode, periodDate])
+  @@index([indexCode, periodDate(sort: Desc)])
+  @@map("freight_index")
+}
+
+// ---------------------------------------------------------------------------
+// Module 2 - Port congestion & disruption
+// ---------------------------------------------------------------------------
+
+model Port {
+  id        String  @id @default(cuid())
+  /// UN/LOCODE, e.g. THLCH for Laem Chabang.
+  unlocode  String  @unique
+  name      String
+  country   String
+  lat       Float?
+  lon       Float?
+  /// Controls dashboard ordering; lower sorts first.
+  sortOrder Int     @default(100)
+  isActive  Boolean @default(true)
+
+  statuses PortStatus[]
+
+  @@map("port")
+}
+
+model PortStatus {
+  id             String     @id @default(cuid())
+  portId         String
+  observedOn     DateTime   @db.Date
+  /// 7-day average vessel waiting time in days.
+  avgWaitDays    Decimal    @db.Decimal(4, 2)
+  vesselsWaiting Int?
+  /// Persisted so a historical row keeps the banding it was judged under,
+  /// even if the thresholds are later retuned.
+  riskLevel      RiskLevel
+  source         DataSource
+  note           String?
+  enteredById    String?
+  createdAt      DateTime   @default(now())
+  updatedAt      DateTime   @updatedAt
+
+  port      Port         @relation(fields: [portId], references: [id], onDelete: Cascade)
+  enteredBy UserProfile? @relation(fields: [enteredById], references: [id], onDelete: SetNull)
+
+  @@unique([portId, observedOn])
+  @@index([observedOn(sort: Desc)])
+  @@map("port_status")
+}
+
+model NewsFeedItem {
+  id              String          @id @default(cuid())
+  /// RSS guid, or a hash of the link when the feed omits one. The dedupe key.
+  guid            String          @unique
+  sourceName      String
+  title           String
+  link            String
+  summary         String?
+  publishedAt     DateTime
+  tags            DisruptionTag[]
+  severity        NewsSeverity    @default(INFO)
+  matchedKeywords String[]
+  createdAt       DateTime        @default(now())
+
+  @@index([publishedAt(sort: Desc)])
+  @@index([severity])
+  @@map("news_feed_item")
+}
+
+// ---------------------------------------------------------------------------
+// Module 3 - AHP carrier decision
+// ---------------------------------------------------------------------------
+
+model CarrierQuote {
+  id          String  @id @default(cuid())
+  decisionId  String?
+  carrierName String
+  serviceName String?
+
+  // Cost inputs (USD). effectiveCost is derived in lib/cost.ts.
+  oceanFreightUsd        Decimal @db.Decimal(12, 2)
+  localChargesUsd        Decimal @default(0) @db.Decimal(12, 2)
+  freeTimeDays           Int     @default(0)
+  freeTimeValuePerDayUsd Decimal @default(0) @db.Decimal(10, 2)
+
+  // Transit
+  transitDays        Int
+  isDirect           Boolean @default(true)
+  transshipmentCount Int     @default(0)
+
+  // Reliability
+  onTimePct               Decimal @db.Decimal(5, 2)
+  blankSailingsPerQuarter Int     @default(0)
+
+  // Space & equipment
+  equipmentAvailabilityScore Int @default(5) // 1-10
+  bookingSlaHours            Int @default(24)
+
+  // Service & documentation
+  docTurnaroundHours Int @default(24)
+  serviceScore       Int @default(5) // 1-10
+
+  containerType String    @default("40HC")
+  validUntil    DateTime? @db.Date
+  createdAt     DateTime  @default(now())
+  updatedAt     DateTime  @updatedAt
+
+  decision AHPDecisionLog? @relation(fields: [decisionId], references: [id], onDelete: Cascade)
+
+  @@index([decisionId])
+  @@map("carrier_quote")
+}
+
+/// The auditable record of one carrier selection.
+model AHPDecisionLog {
+  id        String  @id @default(cuid())
+  userId    String?
+  title     String
+  presetKey String?
+
+  originLocode String?
+  destLocode   String?
+  /// Lane used to pick the market benchmark, e.g. SHA_RTM.
+  routeCode    String?
+
+  /// Raw n x n Saaty matrix exactly as the user entered it.
+  criteriaMatrix    Json
+  /// Criterion key -> weight.
+  criteriaWeights   Json
+  lambdaMax         Float
+  consistencyIndex  Float
+  consistencyRatio  Float
+  isConsistent      Boolean
+  /// Per-carrier per-criterion local scores plus the final 0-100 score.
+  alternativeScores Json
+  winnerCarrier     String
+
+  /// Market figures frozen at decision time. A memo read six weeks later must
+  /// show the market as it was on the day of the call, not as it is now.
+  benchmarkSnapshot Json?
+
+  notes     String?
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  user   UserProfile?   @relation(fields: [userId], references: [id], onDelete: SetNull)
+  quotes CarrierQuote[]
+
+  @@index([userId, createdAt(sort: Desc)])
+  @@map("ahp_decision_log")
+}
+
+// ---------------------------------------------------------------------------
+// Operations
+// ---------------------------------------------------------------------------
+
+/// One row per ingestion attempt. Lets the dashboard say "Drewry: last
+/// success 3 days ago" instead of silently showing an old number as current.
+model ScrapeRun {
+  id           String    @id @default(cuid())
+  source       String
+  status       RunStatus
+  rowsWritten  Int       @default(0)
+  errorMessage String?
+  durationMs   Int
+  startedAt    DateTime  @default(now())
+
+  @@index([source, startedAt(sort: Desc)])
+  @@map("scrape_run")
+}
+
+model UserProfile {
+  /// Mirrors Supabase auth.users.id.
+  id        String   @id
+  email     String   @unique
+  fullName  String?
+  orgName   String?
+  role      UserRole @default(VIEWER)
+  createdAt DateTime @default(now())
+  updatedAt DateTime @updatedAt
+
+  decisions      AHPDecisionLog[]
+  freightEntries FreightIndex[]
+  portEntries    PortStatus[]
+
+  @@map("user_profile")
+}
