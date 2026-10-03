@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useToast } from "@/components/chrome/Toast";
 import { ROUTE_CODES, ROUTE_LABELS } from "@/lib/benchmark";
 
 const INDEX_UNITS: Record<string, { unit: string; label: string }> = {
@@ -22,18 +23,17 @@ function lastThursdayIso(): string {
 
 export function ManualIndexForm() {
   const router = useRouter();
+  const toast = useToast();
 
   const [indexCode, setIndexCode] = useState("WCI");
   const [routeCode, setRouteCode] = useState<string>(ROUTE_CODES.COMPOSITE);
   const [periodDate, setPeriodDate] = useState(lastThursdayIso());
   const [value, setValue] = useState("");
-  const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
-    setStatus(null);
 
     try {
       const response = await fetch("/api/indices/manual", {
@@ -52,15 +52,15 @@ export function ManualIndexForm() {
 
       if (!response.ok) {
         const fields = body.fields ? Object.values(body.fields).join(" · ") : null;
-        setStatus({ kind: "error", text: fields ?? body.error ?? "บันทึกไม่สำเร็จ" });
+        toast.error(fields ?? body.error ?? "บันทึกไม่สำเร็จ");
         return;
       }
 
-      setStatus({ kind: "ok", text: `บันทึก ${indexCode} ${routeCode} งวด ${periodDate} แล้ว` });
+      toast.success(`บันทึก ${indexCode} ${routeCode} งวด ${periodDate} แล้ว`);
       setValue("");
       router.refresh();
     } catch {
-      setStatus({ kind: "error", text: "ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง" });
+      toast.error("ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง");
     } finally {
       setSaving(false);
     }
@@ -140,17 +140,6 @@ export function ManualIndexForm() {
         >
           {saving ? "กำลังบันทึก" : "บันทึกค่า"}
         </button>
-
-        {status && (
-          <p
-            className="text-small"
-            style={{
-              color: status.kind === "ok" ? "var(--color-ok)" : "var(--color-bad)",
-            }}
-          >
-            {status.text}
-          </p>
-        )}
       </div>
     </form>
   );

@@ -2,6 +2,7 @@ import type { Metadata } from "next";
 import { Anuphan, IBM_Plex_Mono } from "next/font/google";
 
 import { SiteHeader } from "@/components/chrome/SiteHeader";
+import { ToastProvider } from "@/components/chrome/Toast";
 import "./globals.css";
 
 /**
@@ -36,8 +37,10 @@ export default function RootLayout({ children }: LayoutProps<"/">) {
       className={`${anuphan.variable} ${plexMono.variable} h-full antialiased`}
     >
       <body className="min-h-full flex flex-col bg-ground text-ink">
-        <SiteHeader />
-        <main className="flex-1">{children}</main>
+        <ToastProvider>
+          <SiteHeader />
+          <main className="flex-1">{children}</main>
+        </ToastProvider>
       </body>
     </html>
   );

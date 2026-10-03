@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useToast } from "@/components/chrome/Toast";
 import { PORT_CSV_TEMPLATE } from "@/lib/csv";
 import { riskLevelForWaitDays, RISK_LABELS } from "@/lib/risk";
 
@@ -29,13 +30,13 @@ export function PortStatusForms({ ports }: { ports: PortOption[] }) {
 
 function SingleEntryForm({ ports }: { ports: PortOption[] }) {
   const router = useRouter();
+  const toast = useToast();
 
   const [unlocode, setUnlocode] = useState(ports[0]?.unlocode ?? "");
   const [observedOn, setObservedOn] = useState(todayIso());
   const [avgWaitDays, setAvgWaitDays] = useState("");
   const [vesselsWaiting, setVesselsWaiting] = useState("");
   const [note, setNote] = useState("");
-  const [status, setStatus] = useState<{ kind: "ok" | "error"; text: string } | null>(null);
   const [saving, setSaving] = useState(false);
 
   const wait = Number(avgWaitDays);
@@ -44,7 +45,6 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
     setSaving(true);
-    setStatus(null);
 
     try {
       const response = await fetch("/api/ports", {
@@ -63,17 +63,17 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
 
       if (!response.ok) {
         const fields = body.fields ? Object.values(body.fields).join(" · ") : null;
-        setStatus({ kind: "error", text: fields ?? body.error ?? "บันทึกไม่สำเร็จ" });
+        toast.error(fields ?? body.error ?? "บันทึกไม่สำเร็จ");
         return;
       }
 
-      setStatus({ kind: "ok", text: `บันทึก ${unlocode} วันที่ ${observedOn} แล้ว` });
+      toast.success(`บันทึก ${unlocode} วันที่ ${observedOn} แล้ว`);
       setAvgWaitDays("");
       setVesselsWaiting("");
       setNote("");
       router.refresh();
     } catch {
-      setStatus({ kind: "error", text: "ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง" });
+      toast.error("ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง");
     } finally {
       setSaving(false);
     }
@@ -164,14 +164,6 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         >
           {saving ? "กำลังบันทึก" : "บันทึก"}
         </button>
-        {status && (
-          <p
-            className="text-small"
-            style={{ color: status.kind === "ok" ? "var(--color-ok)" : "var(--color-bad)" }}
-          >
-            {status.text}
-          </p>
-        )}
       </div>
     </form>
   );
@@ -179,9 +171,9 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
 
 function CsvImportForm() {
   const router = useRouter();
+  const toast = useToast();
   const [file, setFile] = useState<File | null>(null);
   const [result, setResult] = useState<{ imported: number; errors: string[] } | null>(null);
-  const [error, setError] = useState<string | null>(null);
   const [busy, setBusy] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
@@ -189,7 +181,6 @@ function CsvImportForm() {
     if (!file) return;
 
     setBusy(true);
-    setError(null);
     setResult(null);
 
     try {
@@ -200,14 +191,17 @@ function CsvImportForm() {
       const body = await response.json();
 
       if (!response.ok) {
-        setError(body.error ?? "นำเข้าไม่สำเร็จ");
+        toast.error(body.error ?? "นำเข้าไม่สำเร็จ");
         return;
       }
 
+      // The per-row outcome is substantial reading, not a flash message, so
+      // it stays on the page — only the headline result goes to the toast.
+      toast.success(`นำเข้าสำเร็จ ${body.imported} แถว`);
       setResult({ imported: body.imported, errors: body.errors ?? [] });
       router.refresh();
     } catch {
-      setError("ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง");
+      toast.error("ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง");
     } finally {
       setBusy(false);
     }
@@ -239,21 +233,16 @@ function CsvImportForm() {
         >
           {busy ? "กำลังนำเข้า" : "นำเข้าไฟล์"}
         </button>
-        {error && <p className="text-small text-bad">{error}</p>}
       </div>
 
-      {result && (
+      {result && result.errors.length > 0 && (
         <div className="mt-3 text-small">
-          <p style={{ color: "var(--color-ok)" }}>
-            นำเข้าสำเร็จ <span className="fig">{result.imported}</span> แถว
-          </p>
-          {result.errors.length > 0 && (
-            <ul className="mt-2 flex flex-col gap-1 text-micro text-bad">
-              {result.errors.map((message) => (
-                <li key={message}>{message}</li>
-              ))}
-            </ul>
-          )}
+          <p className="text-ink-soft">แถวที่ข้าม เพราะข้อมูลไม่ผ่านการตรวจสอบ:</p>
+          <ul className="mt-2 flex flex-col gap-1 text-micro text-bad">
+            {result.errors.map((message) => (
+              <li key={message}>{message}</li>
+            ))}
+          </ul>
         </div>
       )}
     </form>

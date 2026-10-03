@@ -219,11 +219,39 @@
 
 @layer utilities {
   /*
-   * The only motion on the site: ranking rows move to their new position
-   * when a weight changes, so the change reads as a change.
+   * Motion is reserved for feedback that answers a direct action — never for
+   * decoration. Ranking rows move to their new position when a weight
+   * changes; a toast rises in because it is reporting the result of the
+   * button the user just pressed. No scroll reveals, no hover lifts.
    */
   .rank-row {
     transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  /*
+   * The toast is the one deliberate exception to the flat, border-only
+   * surface language: it floats over arbitrary content rather than sitting
+   * in the document flow, and a hairline border alone does not read as
+   * "above the page" the way it does inside a panel. The shadow is kept
+   * restrained — a hint of elevation, not a card-UI effect.
+   */
+  .toast {
+    border: 1px solid var(--color-line);
+    box-shadow:
+      0 2px 8px rgba(0, 0, 0, 0.08),
+      0 1px 3px rgba(0, 0, 0, 0.05);
+    animation: toast-in 180ms cubic-bezier(0.2, 0, 0, 1);
+  }
+
+  @keyframes toast-in {
+    from {
+      opacity: 0;
+      transform: translateY(6px);
+    }
+    to {
+      opacity: 1;
+      transform: translateY(0);
+    }
   }
 }
 
