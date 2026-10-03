@@ -21,20 +21,39 @@ export interface SessionUser {
 
 const ROLE_RANK: Record<UserRole, number> = { VIEWER: 0, ANALYST: 1, ADMIN: 2 };
 
+/** Auth is optional for reading; the dashboard works without it configured. */
+export function isSupabaseConfigured(): boolean {
+  return Boolean(
+    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
+  );
+}
+
 /**
  * The signed-in user, with their profile row created on first sight.
  *
  * `getUser()` rather than `getSession()`: the former verifies the JWT with
  * Supabase, the latter trusts a cookie the browser could have forged.
+ *
+ * Returns null rather than throwing when auth is unconfigured or unreachable.
+ * Every caller already renders a signed-out state, and failing closed to
+ * "signed out" is both safe and far better than a 500 on a page whose read
+ * half needs no account at all.
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  const supabase = await createSupabaseServerClient();
-  const {
-    data: { user },
-    error,
-  } = await supabase.auth.getUser();
+  if (!isSupabaseConfigured()) return null;
 
-  if (error || !user?.email) return null;
+  let user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
+
+  try {
+    const supabase = await createSupabaseServerClient();
+    const { data, error } = await supabase.auth.getUser();
+    if (error) return null;
+    user = data.user;
+  } catch {
+    return null;
+  }
+
+  if (!user?.email) return null;
 
   const profile = await prisma.userProfile.upsert({
     where: { id: user.id },
