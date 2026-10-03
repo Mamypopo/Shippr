@@ -3,8 +3,11 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { useToast } from "@/components/chrome/Toast";
+
 export function SignInForm({ next }: { next?: string }) {
   const router = useRouter();
+  const toast = useToast();
 
   const [username, setUsername] = useState("");
   const [password, setPassword] = useState("");
@@ -30,6 +33,8 @@ export function SignInForm({ next }: { next?: string }) {
         setPassword("");
         return;
       }
+
+      toast.success(`เข้าสู่ระบบในชื่อ ${body.user?.username ?? username} แล้ว`);
 
       // Only same-origin paths, so a crafted link cannot bounce a freshly
       // signed-in user off to someone else's site.
