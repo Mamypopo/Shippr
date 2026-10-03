@@ -144,35 +144,80 @@ export function extractContainerNewsScfi(html: string, year: string): number | n
   }
 }
 
+/** One row of `/currentIndex`'s response — see `extractSseCurrentIndex`. */
+interface SseLineData {
+  dataItemTypeName?: string;
+  currentContent?: number | null;
+}
+
 /**
- * SCFI is published by the Shanghai Shipping Exchange, which blocks automated
- * clients aggressively. container-news.com republishes it and is currently
- * the working path — see `extractContainerNewsScfi` above for how, and the
- * comment on cbonds.com below for a close call that turned out not to work.
+ * The official SSE page (`indices/scfinew.jsp`) never had the composite
+ * value in its static HTML at all — it loads the page shell, then the
+ * page's own JavaScript calls this exact JSON endpoint client-side. Found by
+ * reading that JavaScript rather than guessing: `$.ajax({ url:
+ * "/currentIndex", data: {indexName:"scfi"} })`, fired on page load before
+ * any login check, as a free "current value" teaser ahead of the paywalled
+ * historical endpoint (`/singleIndex/scfi`, confirmed to require a
+ * subscribed-user session — not a source this project can use).
  *
- * cbonds.com republishes the figure in static HTML (`"actual_value.numeric"`
- * in an embedded state object) and was confirmed reachable by curl with a
- * browser User-Agent — but it sits behind Cloudflare, and both axios and
- * Node's native `fetch` (undici) get an immediate 403 from it in this
- * environment while curl succeeds with identical headers. That is a TLS/JA3
- * fingerprint check, not a header check, so it isn't fixable from inside
- * Node without a real browser engine — which this project deliberately
- * avoids (no Playwright/Puppeteer, to stay light enough for a Vercel
- * function). Recorded here so this isn't rediscovered the hard way: cbonds
- * is not a usable source for this runtime, despite looking like one.
+ * `/currentIndex` itself needs no session, no cookie, no referer — confirmed
+ * with a cold request. The composite sits in `data.lineDataList`, matched by
+ * `dataItemTypeName === "SCFI_T"` rather than by array position, since nothing
+ * documents that position as stable. Its value (3662.2965) matched both
+ * cbonds.com and container-news.com exactly — three independent sources
+ * agreeing is about as confirmed as a reading gets.
+ */
+export function extractSseCurrentIndex(json: string): number | null {
+  let body: unknown;
+  try {
+    body = JSON.parse(json);
+  } catch {
+    return null;
+  }
+
+  if (typeof body !== "object" || body === null || !("data" in body)) return null;
+  const data = (body as { data?: unknown }).data;
+  if (typeof data !== "object" || data === null || !("lineDataList" in data)) return null;
+
+  const lineDataList = (data as { lineDataList?: unknown }).lineDataList;
+  if (!Array.isArray(lineDataList)) return null;
+
+  const composite = (lineDataList as SseLineData[]).find((l) => l?.dataItemTypeName === "SCFI_T");
+  const value = composite?.currentContent;
+  return typeof value === "number" && Number.isFinite(value) ? value : null;
+}
+
+/**
+ * SCFI is published by the Shanghai Shipping Exchange. Its own page blocks a
+ * plain HTML scrape by never putting the number in the HTML (see
+ * `extractSseCurrentIndex`), so the official endpoint it calls client-side is
+ * used directly instead — faster and more direct than scraping a rendered
+ * page would have been anyway. container-news.com (see
+ * `extractContainerNewsScfi`) is kept as an independent fallback: slower and
+ * less reliable, but a second source if SSE's endpoint ever changes shape.
+ *
+ * cbonds.com looked like a third option — the value lives in static HTML
+ * (`"actual_value.numeric"`) — but it sits behind Cloudflare, and both axios
+ * and Node's native `fetch` (undici) get an immediate 403 from it while curl
+ * with identical headers succeeds. That is a TLS/JA3 fingerprint check, not a
+ * header check, so it isn't fixable from inside Node without a real browser
+ * engine — which this project deliberately avoids (no Playwright/Puppeteer,
+ * to stay light enough for a Vercel function). Recorded here so this isn't
+ * rediscovered the hard way: cbonds is not a usable source for this runtime,
+ * despite looking like one.
  */
 export const SCFI: ScrapeTargetConfig = {
   key: "scfi",
   label: "Shanghai Containerized Freight Index",
   urls: [
     {
+      url: "https://en.sse.net.cn/currentIndex?indexName=scfi",
+      extract: extractSseCurrentIndex,
+    },
+    {
       url: "https://container-news.com/scfi/",
       extract: (html) => extractContainerNewsScfi(html, String(new Date().getUTCFullYear())),
     },
-    // Kept as a fallback in case container-news ever changes its page too,
-    // and so the official source is used automatically again if it stops
-    // blocking bots.
-    { url: "https://en.sse.net.cn/indices/scfinew.jsp" },
   ],
   selectors: ["#indexTable", ".scfi", "table", "main"],
   patterns: [
@@ -181,7 +226,7 @@ export const SCFI: ScrapeTargetConfig = {
   ],
   range: { min: 200, max: 6_000 },
   fragility:
-    "The Shanghai Shipping Exchange blocks bots outright. container-news.com is a third party republishing the figure, not the official source — watch for it changing its own chart plugin's data shape, not just SSE's page.",
+    "Reads SSE's own /currentIndex endpoint, found by inspecting the official page's JavaScript rather than guessing. It needs no login — unlike /singleIndex/scfi, which does — but it's an undocumented internal API, not a published contract, so it can change shape without notice. container-news.com is the fallback if it does.",
 };
 
 export const SCRAPE_TARGETS: ScrapeTargetConfig[] = [DREWRY_WCI, SCFI];

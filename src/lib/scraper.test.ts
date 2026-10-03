@@ -10,7 +10,7 @@ import {
   runAllAdapters,
   type SourceAdapter,
 } from "./scraper";
-import { DREWRY_WCI, extractContainerNewsScfi, SCFI } from "./scraper-config";
+import { DREWRY_WCI, extractContainerNewsScfi, extractSseCurrentIndex, SCFI } from "./scraper-config";
 
 describe("parseNumber", () => {
   it("strips thousands separators and currency marks", () => {
@@ -149,9 +149,9 @@ describe("indexWeekDate", () => {
 describe("container-news SCFI extractor", () => {
   const extract = extractContainerNewsScfi;
 
-  it("is actually wired into the SCFI config as the primary source", () => {
-    expect(SCFI.urls[0].url).toContain("container-news.com");
-    expect(SCFI.urls[0].extract).toBeTypeOf("function");
+  it("is wired into the SCFI config as the fallback source", () => {
+    const entry = SCFI.urls.find((u) => u.url.includes("container-news.com"));
+    expect(entry?.extract).toBeTypeOf("function");
   });
 
   /** Builds a chart-plugin-shaped row for one year, matching the real page. */
@@ -202,6 +202,65 @@ describe("container-news SCFI extractor", () => {
 
     expect(result).toBe(3662.3);
     expect(elapsed).toBeLessThan(200);
+  });
+});
+
+describe("SSE currentIndex extractor", () => {
+  /** Trimmed to the fields the extractor reads; the real payload has ~20 lanes. */
+  function responseWith(composite: number | null): string {
+    return JSON.stringify({
+      data: {
+        currentDate: "2026-09-30",
+        lineDataList: [
+          { dataItemTypeName: "SCFI_T", currentContent: composite },
+          { dataItemTypeName: "SCFI_L1", currentContent: null },
+        ],
+      },
+      msg: "Successfully obtained index data ！",
+      status: 1,
+    });
+  }
+
+  it("reads the composite value by its dataItemTypeName, not array position", () => {
+    expect(extractSseCurrentIndex(responseWith(3662.2965))).toBe(3662.2965);
+  });
+
+  it("is not thrown off by an unrelated lane appearing first", () => {
+    const json = JSON.stringify({
+      data: {
+        lineDataList: [
+          { dataItemTypeName: "SCFI_L1", currentContent: 999 },
+          { dataItemTypeName: "SCFI_T", currentContent: 3662.3 },
+        ],
+      },
+    });
+    expect(extractSseCurrentIndex(json)).toBe(3662.3);
+  });
+
+  it("returns null when the composite lane is missing entirely", () => {
+    const json = JSON.stringify({ data: { lineDataList: [{ dataItemTypeName: "SCFI_L1" }] } });
+    expect(extractSseCurrentIndex(json)).toBeNull();
+  });
+
+  it("returns null when the composite's value is null (a lane with no reading yet)", () => {
+    expect(extractSseCurrentIndex(responseWith(null))).toBeNull();
+  });
+
+  it("returns null rather than throwing on malformed JSON", () => {
+    expect(extractSseCurrentIndex("{not json")).toBeNull();
+    expect(extractSseCurrentIndex("")).toBeNull();
+  });
+
+  it("returns null on a well-formed but unrelated JSON shape", () => {
+    expect(extractSseCurrentIndex(JSON.stringify({ status: "ok" }))).toBeNull();
+    expect(extractSseCurrentIndex(JSON.stringify({ data: {} }))).toBeNull();
+    expect(extractSseCurrentIndex("[]")).toBeNull();
+    expect(extractSseCurrentIndex("null")).toBeNull();
+  });
+
+  it("is wired into the SCFI config as the primary source", () => {
+    expect(SCFI.urls[0].url).toContain("en.sse.net.cn/currentIndex");
+    expect(SCFI.urls[0].extract).toBe(extractSseCurrentIndex);
   });
 });
 
