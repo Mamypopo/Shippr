@@ -109,8 +109,13 @@ export interface PasswordRule {
 /**
  * Length is what actually matters; composition rules push people toward
  * "Passw0rd!" and are no longer recommended.
+ *
+ * Set low (6) by request for a single-operator system where the account is
+ * created by hand through the CLI rather than chosen by the public. The
+ * lockout in auth.ts (5 attempts / 15 minutes) is what actually stops online
+ * guessing at this length — a short password is only safe behind that limit.
  */
-export const MIN_PASSWORD_LENGTH = 10;
+export const MIN_PASSWORD_LENGTH = 6;
 
 export function checkPasswordStrength(password: string): PasswordRule {
   if (password.length < MIN_PASSWORD_LENGTH) {
