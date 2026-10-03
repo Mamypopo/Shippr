@@ -10,7 +10,15 @@ import {
   runAllAdapters,
   type SourceAdapter,
 } from "./scraper";
-import { DREWRY_WCI, extractContainerNewsScfi, extractSseCurrentIndex, SCFI } from "./scraper-config";
+import {
+  DREWRY_WCI,
+  extractContainerNewsScfi,
+  extractDrewryMetaDescription,
+  extractShipAndBunkerVlsfo,
+  extractSseCurrentIndex,
+  SCFI,
+  SHIP_AND_BUNKER_VLSFO,
+} from "./scraper-config";
 
 describe("parseNumber", () => {
   it("strips thousands separators and currency marks", () => {
@@ -261,6 +269,89 @@ describe("SSE currentIndex extractor", () => {
   it("is wired into the SCFI config as the primary source", () => {
     expect(SCFI.urls[0].url).toContain("en.sse.net.cn/currentIndex");
     expect(SCFI.urls[0].extract).toBe(extractSseCurrentIndex);
+  });
+});
+
+describe("Drewry meta-description extractor", () => {
+  const extract = extractDrewryMetaDescription;
+
+  function pageWith(description: string): string {
+    return `<head><meta name="description" content="${description}"></head>`;
+  }
+
+  it("reads the composite from the real meta description shape", () => {
+    const html = pageWith(
+      "01 Oct 2026: Drewry’s World Container Index (WCI) fell 1% to $4,434 per 40ft container.",
+    );
+    expect(extract(html)).toBe(4434);
+  });
+
+  it("handles a comma thousands separator", () => {
+    const html = pageWith("Drewry's World Container Index (WCI) rose 2% to $10,250 per 40ft container.");
+    expect(extract(html)).toBe(10_250);
+  });
+
+  it("is wired into the Drewry config as the primary source", () => {
+    const entry = DREWRY_WCI.urls.find((u) => u.extract === extractDrewryMetaDescription);
+    expect(entry).toBeDefined();
+  });
+
+  it("falls back to the visible-text pipeline — a second URL entry with no extractor — if the meta tag is missing", () => {
+    const withoutExtract = DREWRY_WCI.urls.filter((u) => u.extract === undefined);
+    expect(withoutExtract.length).toBeGreaterThan(0);
+  });
+
+  it("returns null when there is no description meta tag at all", () => {
+    expect(extract("<head><title>no meta here</title></head>")).toBeNull();
+  });
+
+  it("returns null when the description doesn't mention the WCI composite", () => {
+    expect(extract(pageWith("Drewry is a supply chain advisory firm."))).toBeNull();
+  });
+
+  it("returns null rather than throwing on a truncated content attribute", () => {
+    expect(extract('<meta name="description" content="unterminated')).toBeNull();
+  });
+});
+
+describe("Ship & Bunker VLSFO extractor", () => {
+  const extract = extractShipAndBunkerVlsfo;
+
+  /** Minimal version of the real table's markup — row id + headers-linked cell, same as the live page. */
+  function pageWith(price: string): string {
+    return `
+      <table>
+        <tr>
+          <th id="row-av-g20-VLSFO" scope="row">Global 20 Ports Average</th>
+          <td headers="price-VLSFO">${price}<span class="indicator"></span></td>
+          <td headers="change-VLSFO">+2.50</td>
+        </tr>
+      </table>
+    `;
+  }
+
+  it("reads the Global 20 Ports Average VLSFO price", () => {
+    expect(extract(pageWith("875.50"))).toBe(875.5);
+  });
+
+  it("ignores a nearby unrelated figure in another column", () => {
+    // The change/high/low/spread columns sit right next to the price cell;
+    // the lookup is by the `headers` attribute, not column position, so it
+    // must not drift onto one of them.
+    expect(extract(pageWith("809.00"))).toBe(809);
+  });
+
+  it("is wired into the config as the primary (and only) source", () => {
+    expect(SHIP_AND_BUNKER_VLSFO.urls[0].extract).toBe(extractShipAndBunkerVlsfo);
+  });
+
+  it("returns null when the row is absent", () => {
+    expect(extract("<table><tr><td>no bunker data here</td></tr></table>")).toBeNull();
+  });
+
+  it("returns null rather than throwing on empty or malformed HTML", () => {
+    expect(extract("")).toBeNull();
+    expect(extract("<not even close to html")).toBeNull();
   });
 });
 

@@ -13,6 +13,7 @@ const INDEX_UNITS: Record<string, { unit: string; label: string }> = {
   WTI: { unit: "USD", label: "USD ต่อบาร์เรล" },
   BRENT: { unit: "USD", label: "USD ต่อบาร์เรล" },
   ZIM: { unit: "USD", label: "USD ต่อหุ้น" },
+  VLSFO: { unit: "USD_PER_MT", label: "USD ต่อตัน" },
 };
 
 /** Most recent Thursday — the day both WCI and SCFI publish. */
@@ -72,8 +73,8 @@ export function ManualIndexForm() {
     <form onSubmit={handleSubmit} className="panel px-4 py-4">
       <h2 className="text-base">กรอกค่าดัชนีสัปดาห์นี้</h2>
       <p className="mt-1 max-w-[62ch] text-micro leading-relaxed text-ink-faint">
-        Drewry แสดง WCI เป็นกราฟ ไม่มีตารางให้ดึงอัตโนมัติ ช่องนี้จึงเป็นทางหลักของดัชนีนั้น
-        ไม่ใช่ทางสำรอง ค่าที่กรอกที่นี่จะไม่ถูก job อัตโนมัติเขียนทับ
+        ระบบดึงดัชนีเหล่านี้อัตโนมัติอยู่แล้ว ช่องนี้สำหรับตอนที่การดึงอัตโนมัติพังทั้งทางหลักและทางสำรอง
+        หรือมีตัวเลขที่เชื่อถือได้กว่าจากที่อื่น ค่าที่กรอกที่นี่จะไม่ถูก job อัตโนมัติเขียนทับ
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">

@@ -14,11 +14,12 @@ import { describeError, fetchText } from "./http";
 import {
   DREWRY_WCI,
   SCFI,
+  SHIP_AND_BUNKER_VLSFO,
   type ScrapeTargetConfig,
 } from "./scraper-config";
 
-export type IndexCodeKey = "WCI" | "SCFI" | "BDRY" | "WTI" | "BRENT" | "ZIM";
-export type IndexUnitKey = "USD_PER_FEU" | "POINTS" | "USD";
+export type IndexCodeKey = "WCI" | "SCFI" | "BDRY" | "WTI" | "BRENT" | "ZIM" | "VLSFO";
+export type IndexUnitKey = "USD_PER_FEU" | "POINTS" | "USD" | "USD_PER_MT";
 
 export interface ParsedIndex {
   indexCode: IndexCodeKey;
@@ -225,6 +226,20 @@ export const scfiAdapter: SourceAdapter = {
 
 /** Registry, so a broken source can be swapped without touching the route. */
 export const SOURCE_ADAPTERS: SourceAdapter[] = [drewryWciAdapter, scfiAdapter];
+
+export const shipAndBunkerAdapter: SourceAdapter = {
+  key: SHIP_AND_BUNKER_VLSFO.key,
+  label: SHIP_AND_BUNKER_VLSFO.label,
+  fetch: () => scrapeSingleValue(SHIP_AND_BUNKER_VLSFO, "VLSFO", "USD_PER_MT"),
+};
+
+/**
+ * Bunker fuel cost moves daily, like the Yahoo Finance sentiment symbols,
+ * not weekly like WCI/SCFI — kept as its own registry so the daily
+ * market-sentiment job can run it without lumping a different fetch cadence
+ * into `SOURCE_ADAPTERS`.
+ */
+export const BUNKER_ADAPTERS: SourceAdapter[] = [shipAndBunkerAdapter];
 
 export interface AdapterOutcome {
   key: string;

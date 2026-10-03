@@ -6,6 +6,8 @@
  * one-line edit rather than a hunt through parsing code.
  */
 
+import * as cheerio from "cheerio";
+
 export interface IndexRangeRule {
   /** Values outside this band are treated as a parse failure, not data. */
   min: number;
@@ -70,15 +72,63 @@ export interface ScrapeTargetConfig {
 }
 
 /**
- * Drewry publishes the WCI as an interactive chart with no HTML table, so
- * there is nothing structural to select. The reliable surface is the prose in
- * their weekly commentary, which states the composite in USD per 40ft.
- * Expect this to need the manual entry form most weeks.
+ * Drewry's `<meta name="description">` tag, e.g.
+ * `"01 Oct 2026: Drewry's World Container Index (WCI) fell 1% to $4,434 per
+ * 40ft container."` — generated from their own underlying data for SEO/social
+ * previews, not hand-written prose. Reading the meta tag directly, rather
+ * than the page's visible text, is deliberate: `extractSearchText` only
+ * collects text nodes under a selector, and a `<meta>` tag's value lives in
+ * an attribute that selector text never includes, so the visible-text
+ * pipeline could never have reached this field regardless of which selector
+ * or pattern it was given.
+ *
+ * `indexOf` plus a bounded slice, not a regex over the whole page, for the
+ * same ReDoS-avoidance reason as `extractContainerNewsScfi`.
+ */
+export function extractDrewryMetaDescription(html: string): number | null {
+  const marker = '<meta name="description" content="';
+  const start = html.indexOf(marker);
+  if (start === -1) return null;
+
+  const contentStart = start + marker.length;
+  const contentEnd = html.indexOf('"', contentStart);
+  if (contentEnd === -1) return null;
+
+  // The description is a short, fixed-shape sentence (well under 300 chars
+  // in practice), so a regex here carries none of the backtracking risk a
+  // pattern run against a whole page would.
+  const description = html.slice(contentStart, contentEnd);
+  const match = description.match(
+    /World Container Index[^$]{0,60}\$\s?([\d,]+(?:\.\d+)?)\s*per\s*40ft/i,
+  );
+  if (!match) return null;
+
+  const value = Number.parseFloat(match[1].replace(/,/g, ""));
+  return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * Drewry publishes the WCI as an interactive chart with no HTML table — there
+ * is no table or named element to select for the number itself. The page's
+ * own SEO meta description states the composite in plain USD-per-40ft terms
+ * (see `extractDrewryMetaDescription`), so that is the primary read; the
+ * visible-text patterns stay as a fallback in case Drewry ever drops the meta
+ * tag; manual entry remains the backstop if both miss.
  */
 export const DREWRY_WCI: ScrapeTargetConfig = {
   key: "drewry-wci",
   label: "Drewry World Container Index",
   urls: [
+    {
+      url: "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+      extract: extractDrewryMetaDescription,
+    },
+    // `scrapeSingleValue` treats `extract` as exclusive for a URL entry — it
+    // does not fall through to the selector/pattern pipeline if the
+    // extractor returns null — so the visible-text fallback has to be a
+    // second entry, fetched only if the first fails. Same shape as SCFI's
+    // primary-API-then-mirror-site fallback below, just against the same
+    // page instead of a different one.
     {
       url: "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
     },
@@ -95,7 +145,7 @@ export const DREWRY_WCI: ScrapeTargetConfig = {
   // match in that territory is a mis-parse, not a market event.
   range: { min: 200, max: 20_000 },
   fragility:
-    "Drewry renders the WCI as a chart with no HTML table. Parsing depends on the wording of their weekly commentary and breaks whenever that copy changes.",
+    "Drewry renders the WCI itself as a chart with no HTML table. Reads the page's own SEO meta description instead, which states the composite in plain USD-per-40ft terms — more stable than visible prose, but still an undocumented side effect of their SEO setup, not a published API. Falls back to parsing visible page text if the meta tag ever disappears; manual entry remains the backstop if both miss.",
 };
 
 /**
@@ -227,6 +277,56 @@ export const SCFI: ScrapeTargetConfig = {
   range: { min: 200, max: 6_000 },
   fragility:
     "Reads SSE's own /currentIndex endpoint, found by inspecting the official page's JavaScript rather than guessing. It needs no login — unlike /singleIndex/scfi, which does — but it's an undocumented internal API, not a published contract, so it can change shape without notice. container-news.com is the fallback if it does.",
+};
+
+/**
+ * Ship & Bunker's price table uses stable, semantic markup — a `<th id=
+ * "row-av-g20-VLSFO">` row header and a matching `<td headers="price-VLSFO">`
+ * — rather than hashed CSS classes, so a direct cheerio lookup is both
+ * simpler and more robust here than a text pattern would be. Unlike the
+ * Drewry and SCFI extractors, this one parses real structured HTML rather
+ * than a JSON blob or a meta tag, so there is no ReDoS concern to design
+ * around: cheerio's own selector engine does the traversal.
+ */
+export function extractShipAndBunkerVlsfo(html: string): number | null {
+  const $ = cheerio.load(html);
+  const text = $('th#row-av-g20-VLSFO')
+    .closest("tr")
+    .find('td[headers="price-VLSFO"]')
+    .first()
+    .text();
+
+  if (!text) return null;
+
+  const value = Number.parseFloat(text.replace(/[^0-9.]/g, ""));
+  return Number.isFinite(value) ? value : null;
+}
+
+/**
+ * VLSFO (Very Low Sulphur Fuel Oil) has been the dominant bunker fuel fleet-
+ * wide since the IMO 2020 sulphur cap, so this is the actual cost carriers
+ * pay, not a proxy for it the way WTI/Brent crude are. "Global 20 Ports
+ * Average" is the row read — a single representative figure rather than one
+ * port's local price, which would swing on local supply quirks that don't
+ * reflect the market as a whole.
+ */
+export const SHIP_AND_BUNKER_VLSFO: ScrapeTargetConfig = {
+  key: "ship-and-bunker-vlsfo",
+  label: "Ship & Bunker VLSFO (Global 20 Ports Average)",
+  urls: [
+    {
+      url: "https://shipandbunker.com/prices",
+      extract: extractShipAndBunkerVlsfo,
+    },
+  ],
+  selectors: [],
+  patterns: [],
+  // Bunker prices have ranged roughly $200-1,200/mt over the last decade;
+  // anything outside that is a parse landing on the wrong column, not a
+  // real fuel price.
+  range: { min: 100, max: 2_000 },
+  fragility:
+    "Reads a named row/column pair (#row-av-g20-VLSFO / [headers=price-VLSFO]) from Ship & Bunker's own price table. Stable as long as those ids stay put; no fallback source configured, so a redesign that renames them fails loudly rather than silently, same as any other source here.",
 };
 
 export const SCRAPE_TARGETS: ScrapeTargetConfig[] = [DREWRY_WCI, SCFI];

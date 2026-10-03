@@ -4,13 +4,16 @@
  */
 
 export function formatIndexValue(value: number, unit: string): string {
-  if (unit === "USD_PER_FEU") return `$${Math.round(value).toLocaleString("en-US")}`;
+  if (unit === "USD_PER_FEU" || unit === "USD_PER_MT") {
+    return `$${Math.round(value).toLocaleString("en-US")}`;
+  }
   if (unit === "USD") return `$${value.toFixed(2)}`;
   return Math.round(value).toLocaleString("en-US");
 }
 
 export function unitSuffix(unit: string): string {
   if (unit === "USD_PER_FEU") return "USD/FEU";
+  if (unit === "USD_PER_MT") return "USD/MT";
   if (unit === "USD") return "USD";
   return "pts";
 }
@@ -30,9 +33,9 @@ export function formatThb(value: number): string {
   return `≈ ${Math.round(value).toLocaleString("th-TH")} บาท`;
 }
 
-/** Only WCI's dollars-per-container and the raw USD readings have a THB reading worth showing; SCFI is a points index, not a price. */
+/** Only the dollar-denominated units have a THB reading worth showing; SCFI is a points index, not a price. */
 export function unitHasUsdValue(unit: string): boolean {
-  return unit === "USD_PER_FEU" || unit === "USD";
+  return unit === "USD_PER_FEU" || unit === "USD" || unit === "USD_PER_MT";
 }
 
 /** Thai short date, e.g. "2 ต.ค." */
@@ -63,6 +66,7 @@ export const INDEX_LABELS: Record<string, string> = {
   WTI: "WTI Crude Oil",
   BRENT: "Brent Crude Oil",
   ZIM: "ZIM (หุ้นสายเรือ)",
+  VLSFO: "VLSFO (น้ำมันเตาเรือ)",
 };
 
 export function indexLabel(code: string): string {

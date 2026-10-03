@@ -21,12 +21,14 @@ enum IndexCode {
   WTI // WTI crude oil futures — proxy for bunker fuel cost
   BRENT // Brent crude oil futures — proxy for bunker fuel cost
   ZIM // ZIM Integrated Shipping Services — carrier stock, sentiment proxy
+  VLSFO // Very Low Sulphur Fuel Oil — the actual bunker fuel carriers burn, not a proxy
 }
 
 enum IndexUnit {
   USD_PER_FEU
   POINTS
   USD
+  USD_PER_MT // Bunker fuel is quoted per metric ton, not per container or per share.
 }
 
 /// Where a data point came from. Shown in the UI so a reader can tell a

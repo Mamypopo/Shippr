@@ -102,7 +102,7 @@ export default async function AdminIndicesPage() {
 
 const RUN_SOURCES: Array<{ key: string; label: string }> = [
   { key: "freight-index", label: "ดัชนีค่าระวาง (รายสัปดาห์)" },
-  { key: "market-sentiment", label: "BDRY / น้ำมันดิบ / ZIM (รายวัน)" },
+  { key: "market-sentiment", label: "BDRY / น้ำมันดิบ / ZIM / VLSFO (รายวัน)" },
   { key: "news", label: "ข่าว RSS (ทุก 4 ชม.)" },
 ];
 
