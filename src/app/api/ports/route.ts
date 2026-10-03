@@ -1,4 +1,4 @@
-import { isAuthFailure, requireRole } from "@/lib/auth";
+import { isAuthFailure, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getPortSnapshots } from "@/lib/queries";
 import { riskLevelForWaitDays } from "@/lib/risk";
@@ -16,7 +16,7 @@ export async function GET(): Promise<Response> {
  * subscribes to.
  */
 export async function POST(request: Request): Promise<Response> {
-  const auth = await requireRole("ANALYST");
+  const auth = await requireAuth();
   if (isAuthFailure(auth)) return auth.response;
 
   let body: unknown;

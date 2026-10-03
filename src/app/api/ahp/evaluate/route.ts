@@ -1,4 +1,5 @@
 import { computeAHP } from "@/lib/ahp";
+import { isAuthFailure, requireAuth } from "@/lib/auth";
 import { perFeuRate, quotesToAlternatives, type QuoteInput } from "@/lib/cost";
 import { compareToMarket } from "@/lib/benchmark";
 import { prisma } from "@/lib/db";
@@ -13,8 +14,17 @@ import type { Prisma } from "@/generated/prisma/client";
  * but the stored record is always recomputed here from the submitted inputs.
  * Accepting a client-supplied winner would make the decision log worthless as
  * an audit trail.
+ *
+ * Requires sign-in. The browser only ever calls this on an explicit save —
+ * the live preview while dragging sliders runs entirely client-side — so
+ * there is no legitimate anonymous caller, and an unguarded version of this
+ * route would let anyone who found the deployment URL write decision records
+ * containing real client pricing.
  */
 export async function POST(request: Request): Promise<Response> {
+  const auth = await requireAuth();
+  if (isAuthFailure(auth)) return auth.response;
+
   let body: unknown;
   try {
     body = await request.json();
@@ -83,6 +93,7 @@ export async function POST(request: Request): Promise<Response> {
    */
   const decision = await prisma.aHPDecisionLog.create({
     data: {
+      userId: auth.user.id,
       title: payload.title,
       presetKey: payload.presetKey ?? null,
       originLocode: payload.originLocode ?? null,

@@ -1,7 +1,7 @@
 import Link from "next/link";
 
 import { PortBayPlan } from "@/components/ports/PortBayPlan";
-import { getSessionUser, hasRole } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getPortSnapshots } from "@/lib/queries";
 import { PortStatusForms } from "./PortStatusForms";
@@ -21,7 +21,7 @@ export default async function AdminPortsPage() {
     getPortSnapshots(),
   ]);
 
-  const canEdit = hasRole(user, "ANALYST");
+  
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
@@ -35,23 +35,17 @@ export default async function AdminPortsPage() {
 
       <PortBayPlan ports={snapshots} />
 
-      {canEdit ? (
+      {user ? (
         <PortStatusForms ports={ports} />
       ) : (
         <section className="panel px-4 py-5">
-          <p className="text-small text-ink-soft">
-            {user
-              ? `บัญชีของคุณมีสิทธิ์ ${user.role} จึงดูได้อย่างเดียว ต้องมีสิทธิ์ ANALYST ขึ้นไปจึงจะกรอกข้อมูลได้`
-              : "ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้"}
-          </p>
-          {!user && (
-            <Link
-              href="/signin"
-              className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
-            >
-              เข้าสู่ระบบ
-            </Link>
-          )}
+          <p className="text-small text-ink-soft">ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้</p>
+          <Link
+            href="/signin"
+            className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
+          >
+            เข้าสู่ระบบ
+          </Link>
         </section>
       )}
     </div>

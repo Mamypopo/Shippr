@@ -21,8 +21,6 @@ export interface SessionUser {
   role: UserRole;
 }
 
-const ROLE_RANK: Record<UserRole, number> = { VIEWER: 0, ANALYST: 1, ADMIN: 2 };
-
 /** Wrong password this many times and the account locks. */
 export const MAX_FAILED_ATTEMPTS = 5;
 export const LOCKOUT_MINUTES = 15;
@@ -147,37 +145,25 @@ export async function getSessionUser(): Promise<SessionUser | null> {
   }
 }
 
-export function hasRole(user: SessionUser | null, required: UserRole): boolean {
-  if (!user) return false;
-  return ROLE_RANK[user.role] >= ROLE_RANK[required];
-}
-
 export interface AuthFailure {
   response: Response;
 }
 
 /**
- * Guard for route handlers. Returns the user, or a ready-made response.
+ * Guard for route handlers that write data. Returns the signed-in user, or a
+ * ready-made 401 response.
  *
- * 401 and 403 stay distinct: "sign in" and "your account cannot do this"
- * need different handling in the UI.
+ * There is exactly one person running this system, so there is nothing for a
+ * role to distinguish: every account that exists is trusted with every write.
+ * The `role` column stays on the schema as inert metadata rather than being
+ * migrated away, in case a second person with narrower access is ever
+ * actually needed, but no code branches on it.
  */
-export async function requireRole(
-  required: UserRole,
-): Promise<{ user: SessionUser } | AuthFailure> {
+export async function requireAuth(): Promise<{ user: SessionUser } | AuthFailure> {
   const user = await getSessionUser();
 
   if (!user) {
     return { response: Response.json({ error: "ต้องเข้าสู่ระบบก่อน" }, { status: 401 }) };
-  }
-
-  if (!hasRole(user, required)) {
-    return {
-      response: Response.json(
-        { error: `การกระทำนี้ต้องมีสิทธิ์ ${required} แต่บัญชีของคุณเป็น ${user.role}` },
-        { status: 403 },
-      ),
-    };
   }
 
   return { user };

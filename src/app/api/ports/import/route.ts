@@ -1,4 +1,4 @@
-import { isAuthFailure, requireRole } from "@/lib/auth";
+import { isAuthFailure, requireAuth } from "@/lib/auth";
 import { missingPortColumns, parseCsv } from "@/lib/csv";
 import { prisma } from "@/lib/db";
 import { riskLevelForWaitDays } from "@/lib/risk";
@@ -14,7 +14,7 @@ export const maxDuration = 60;
  * way to tell which one was wrong.
  */
 export async function POST(request: Request): Promise<Response> {
-  const auth = await requireRole("ANALYST");
+  const auth = await requireAuth();
   if (isAuthFailure(auth)) return auth.response;
 
   const formData = await request.formData().catch(() => null);

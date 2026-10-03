@@ -1,6 +1,6 @@
 import Link from "next/link";
 
-import { getSessionUser, hasRole } from "@/lib/auth";
+import { getSessionUser } from "@/lib/auth";
 import { prisma, toNumber } from "@/lib/db";
 import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "@/lib/format";
 import { latestRunsBySource } from "@/lib/ingest";
@@ -30,7 +30,7 @@ export default async function AdminIndicesPage() {
     latestRunsBySource(),
   ]);
 
-  const canEdit = hasRole(user, "ANALYST");
+  
 
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
@@ -43,23 +43,17 @@ export default async function AdminIndicesPage() {
 
       <IngestionStatus runs={runs} />
 
-      {canEdit ? (
+      {user ? (
         <ManualIndexForm />
       ) : (
         <section className="panel px-4 py-5">
-          <p className="text-small text-ink-soft">
-            {user
-              ? `บัญชีของคุณมีสิทธิ์ ${user.role} จึงดูได้อย่างเดียว ต้องมีสิทธิ์ ANALYST ขึ้นไปจึงจะกรอกข้อมูลได้`
-              : "ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้"}
-          </p>
-          {!user && (
-            <Link
-              href="/signin"
-              className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
-            >
-              เข้าสู่ระบบ
-            </Link>
-          )}
+          <p className="text-small text-ink-soft">ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้</p>
+          <Link
+            href="/signin"
+            className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
+          >
+            เข้าสู่ระบบ
+          </Link>
         </section>
       )}
 

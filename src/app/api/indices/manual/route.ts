@@ -1,4 +1,4 @@
-import { isAuthFailure, requireRole } from "@/lib/auth";
+import { isAuthFailure, requireAuth } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { formatZodIssues, manualIndexSchema } from "@/lib/validation";
 
@@ -11,7 +11,7 @@ import { formatZodIssues, manualIndexSchema } from "@/lib/validation";
  * overwrite a manual figure with a later scrape of the same week.
  */
 export async function POST(request: Request): Promise<Response> {
-  const auth = await requireRole("ANALYST");
+  const auth = await requireAuth();
   if (isAuthFailure(auth)) return auth.response;
 
   let body: unknown;

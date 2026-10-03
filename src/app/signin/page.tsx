@@ -22,12 +22,6 @@ export default async function SignInPage(props: PageProps<"/signin">) {
       </p>
 
       <SignInForm next={next} />
-
-      <p className="mt-6 border-t border-line pt-4 text-micro leading-relaxed text-ink-faint">
-        ระบบนี้ไม่มีการสมัครเอง และไม่มีรีเซ็ตรหัสผ่านผ่านอีเมล ถ้าลืมรหัสผ่านหรือต้องการบัญชีใหม่
-        ให้ผู้ดูแลระบบสั่ง{" "}
-        <code className="mono text-ink-soft">npm run user passwd &lt;ชื่อผู้ใช้&gt;</code>
-      </p>
     </div>
   );
 }
