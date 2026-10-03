@@ -6,6 +6,7 @@ import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "
 import { latestRunsBySource } from "@/lib/ingest";
 import { routeLabel } from "@/lib/benchmark";
 import { ManualIndexForm } from "./ManualIndexForm";
+import { RunIngestionButton } from "./RunIngestionButton";
 
 export const dynamic = "force-dynamic";
 
@@ -30,8 +31,6 @@ export default async function AdminIndicesPage() {
     latestRunsBySource(),
   ]);
 
-  
-
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="panel px-4 py-4">
@@ -41,7 +40,7 @@ export default async function AdminIndicesPage() {
         </p>
       </header>
 
-      <IngestionStatus runs={runs} />
+      <IngestionStatus runs={runs} canRun={Boolean(user)} />
 
       {user ? (
         <ManualIndexForm />
@@ -114,8 +113,10 @@ const RUN_SOURCES: Array<{ key: string; label: string }> = [
  */
 function IngestionStatus({
   runs,
+  canRun,
 }: {
   runs: Record<string, { status: string; startedAt: Date; rowsWritten: number } | undefined>;
+  canRun: boolean;
 }) {
   return (
     <section className="panel">
@@ -138,7 +139,11 @@ function IngestionStatus({
               key={source.key}
               className={`border-t border-line p-3 sm:border-t-0 ${i > 0 ? "sm:border-l" : ""}`}
             >
-              <p className="text-small">{source.label}</p>
+              <div className="flex items-start justify-between gap-2">
+                <p className="text-small">{source.label}</p>
+                {canRun && <RunIngestionButton jobKey={source.key} label={source.label} />}
+              </div>
+
               {run ? (
                 <>
                   <p className="mt-1 text-small" style={{ color: ink }}>
