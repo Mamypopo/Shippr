@@ -1,46 +1,53 @@
 @import "tailwindcss";
 
 /*
- * Shippr — stowage plan.
+ * Shippr — stowage plan, second pass.
  *
- * The page is one continuous ruled grid and colour means risk. Nothing else
- * on the page is coloured: links, buttons and headings are ink. See
- * docs/design-notes.md for the reasoning.
+ * The first pass drifted into hairline boxes on near-white with monospace
+ * labels, which is the house style of every technical site and says nothing
+ * about containers. A real bay plan is not a set of outlined boxes: it is a
+ * mosaic of solid painted blocks that you read as a shape before you read a
+ * single figure. This pass commits to that — large saturated fills, a ground
+ * dark enough for them to sit on, and no monospace outside the one table
+ * where column alignment does actual work.
+ *
+ * Colour still means risk, and only risk. See docs/design-notes.md.
  */
 
 @theme {
   /* Ink and ground */
-  --color-hull: #1b2a32;
-  --color-hull-soft: #4a5a62;
-  --color-hull-faint: #7b8990;
-  --color-deck: #e4e7e3;
-  --color-plan: #f5f6f3;
-  --color-plan-sunk: #dcdfda;
+  --color-hull: #17232b;
+  --color-hull-soft: #46565e;
+  --color-hull-faint: #74838a;
+  --color-deck: #c9cfc8;
+  --color-plan: #fafaf7;
+  --color-plan-sunk: #dfe2dc;
 
   /* Grid */
-  --color-rule: #a8b2ad;
-  --color-rule-heavy: #5c6b66;
+  --color-rule: #9aa59e;
+  --color-rule-heavy: #17232b;
 
-  /* Status — the only chroma on the page */
-  --color-clear: #2f6b4f;
-  --color-clear-fill: #cfe0d4;
-  --color-watch: #b5811f;
-  --color-watch-fill: #f0e1c0;
-  --color-hazard: #a33027;
-  --color-hazard-fill: #efcfca;
+  /* Status — container paint, not UI-kit pastels */
+  --color-clear: #1f6b4a;
+  --color-clear-ink: #f2f6f1;
+  --color-watch: #c2761a;
+  --color-watch-ink: #fffaf0;
+  --color-hazard: #9b2f24;
+  --color-hazard-ink: #fdf2ef;
 
-  --font-sans: var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+  --font-display: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
+  --font-sans: var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: ui-monospace, "Cascadia Mono", monospace;
 
   /* Major third from 16 */
-  --text-micro: 0.6875rem; /* 11 */
-  --text-small: 0.8125rem; /* 13 */
+  --text-micro: 0.75rem; /* 12 */
+  --text-small: 0.875rem; /* 14 */
   --text-base: 1rem;
   --text-lead: 1.25rem;
   --text-figure-sm: 1.5625rem; /* 25 */
-  --text-figure: 1.9375rem; /* 31 */
-  --text-figure-lg: 2.4375rem; /* 39 */
-  --text-display: 3.0625rem; /* 49 */
+  --text-figure: 2.4375rem; /* 39 */
+  --text-figure-lg: 3.0625rem; /* 49 */
+  --text-display: 3.8125rem; /* 61 */
 }
 
 @layer base {
@@ -52,19 +59,43 @@
   body {
     font-family: var(--font-sans);
     /* Thai ascenders and tone marks need the extra room. */
-    line-height: 1.6;
+    line-height: 1.65;
     -webkit-font-smoothing: antialiased;
   }
 
-  /* Figures must line up in a column to be comparable down the page. */
-  .tnum {
-    font-family: var(--font-mono);
+  h1,
+  h2,
+  h3,
+  h4 {
+    font-family: var(--font-display);
+    font-weight: 600;
+    line-height: 1.25;
+  }
+
+  /*
+   * Figures carry the angular display face, not a monospace one. Chakra Petch
+   * digits are already near-even width, and tabular-nums squares them off, so
+   * a column of rates still reads straight down without importing the
+   * terminal-printout look that made the first pass generic.
+   */
+  .fig {
+    font-family: var(--font-display);
     font-variant-numeric: tabular-nums;
     font-feature-settings: "tnum" 1;
+    letter-spacing: -0.01em;
+  }
+
+  /* A slot address, painted in the corner of a bay-plan cell. */
+  .addr {
+    font-family: var(--font-display);
+    font-size: var(--text-micro);
+    font-weight: 600;
+    letter-spacing: 0.06em;
+    opacity: 0.6;
   }
 
   :focus-visible {
-    outline: 2px solid var(--color-hull);
+    outline: 3px solid var(--color-hull);
     outline-offset: 2px;
   }
 
@@ -73,51 +104,79 @@
     color: var(--color-plan);
   }
 
-  /* The plan's own border is heavier than the cell divisions inside it. */
+  /*
+   * A plan is a drawn sheet: a heavy outer frame, light divisions inside.
+   * With the cells filled, this reads as a plan rather than as a card.
+   */
   .plan {
-    border: 2px solid var(--color-rule-heavy);
+    border: 3px solid var(--color-rule-heavy);
     background: var(--color-plan);
   }
 
-  .plan-divide-x > * + * {
-    border-left: 1px solid var(--color-rule);
-  }
-
-  .plan-divide-y > * + * {
-    border-top: 1px solid var(--color-rule);
-  }
-
-  /* A slot address, as printed in the corner of a bay-plan cell. */
-  .slot-address {
-    font-family: var(--font-mono);
-    font-size: var(--text-micro);
-    letter-spacing: 0.04em;
-    color: var(--color-hull-faint);
+  /* An ink-filled region of the same sheet, for the masthead. */
+  .plan-ink {
+    border: 3px solid var(--color-rule-heavy);
+    background: var(--color-hull);
+    color: var(--color-plan);
   }
 
   input,
   select,
   textarea {
     background: var(--color-plan);
-    border: 1px solid var(--color-rule);
+    border: 2px solid var(--color-hull);
     color: var(--color-hull);
+    font-family: var(--font-sans);
   }
 
   input:focus,
   select:focus,
   textarea:focus {
-    border-color: var(--color-hull);
     outline: none;
-    box-shadow: inset 0 0 0 1px var(--color-hull);
+    box-shadow: inset 0 0 0 2px var(--color-hull);
+  }
+
+  /* Buttons are painted blocks too, not outlined chips. */
+  .btn {
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 2px solid var(--color-hull);
+    background: var(--color-plan);
+    color: var(--color-hull);
+  }
+
+  .btn:hover {
+    background: var(--color-hull);
+    color: var(--color-plan);
+  }
+
+  .btn-solid {
+    font-family: var(--font-display);
+    font-weight: 600;
+    border: 2px solid var(--color-hull);
+    background: var(--color-hull);
+    color: var(--color-plan);
+  }
+
+  .btn-solid:hover {
+    background: var(--color-plan);
+    color: var(--color-hull);
+  }
+
+  .btn-solid:disabled,
+  .btn:disabled {
+    border-color: var(--color-rule);
+    background: var(--color-plan-sunk);
+    color: var(--color-hull-faint);
+    cursor: not-allowed;
   }
 }
 
-/*
- * The one piece of motion on the site: ranking rows move to their new
- * position when the user changes a weight, so the change is legible as a
- * change rather than a redraw.
- */
 @layer utilities {
+  /*
+   * The only motion on the site: ranking rows move to their new position when
+   * the user changes a weight, so the change reads as a change.
+   */
   .rank-row {
     transition: transform 320ms cubic-bezier(0.2, 0, 0, 1);
   }
@@ -144,9 +203,11 @@
     color: #000;
   }
 
-  .plan {
+  .plan,
+  .plan-ink {
     border-color: #000;
     background: #fff;
+    color: #000;
   }
 
   @page {

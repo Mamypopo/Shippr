@@ -66,7 +66,7 @@ export function SignInForm() {
       <button
         type="submit"
         disabled={state === "sending" || email.trim() === ""}
-        className="mt-4 w-full border-2 border-hull bg-hull px-4 py-2 text-small text-plan disabled:border-rule disabled:bg-plan-sunk disabled:text-hull-faint"
+        className="mt-4 w-full btn-solid px-4 py-2 text-small"
       >
         {state === "sending" ? "กำลังส่งลิงก์" : "ส่งลิงก์เข้าสู่ระบบ"}
       </button>

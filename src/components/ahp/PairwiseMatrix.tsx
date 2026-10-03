@@ -46,9 +46,9 @@ export function PairwiseMatrix({
   return (
     <div className="flex flex-col gap-4">
       <section className="plan" aria-label="เลือกรูปแบบสินค้า">
-        <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-          <h3 className="text-small font-medium">รูปแบบสินค้า</h3>
-          <span className="slot-address">
+        <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+          <h3 className="text-base">รูปแบบสินค้า</h3>
+          <span className="addr">
             {presetKey === "CUSTOM" ? "ปรับเอง" : CARGO_PRESETS[presetKey].key}
           </span>
         </div>
@@ -62,14 +62,14 @@ export function PairwiseMatrix({
                 type="button"
                 onClick={() => onApplyPreset(preset.key)}
                 aria-pressed={active}
-                className="border-t border-rule p-3 text-left first:border-t-0 sm:border-l sm:[&:nth-child(2n+1)]:border-l-0 xl:border-l xl:[&:nth-child(2n+1)]:border-l xl:[&:first-child]:border-l-0"
+                className="border-t border-rule p-3 text-left first:border-t-0 sm:border-l sm:nth-[2n+1]:border-l-0 xl:border-l xl:nth-[2n+1]:border-l xl:[&:first-child]:border-l-0"
                 style={
                   active
                     ? { background: "var(--color-hull)", color: "var(--color-plan)" }
                     : undefined
                 }
               >
-                <span className="block text-small font-medium">{preset.label.th}</span>
+                <span className="block text-base">{preset.label.th}</span>
                 <span
                   className="mt-1 block text-micro leading-snug"
                   style={{ color: active ? "var(--color-plan-sunk)" : "var(--color-hull-faint)" }}
@@ -83,9 +83,9 @@ export function PairwiseMatrix({
       </section>
 
       <section className="plan" aria-label="เปรียบเทียบความสำคัญของเกณฑ์">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2">
-          <h3 className="text-small font-medium">เทียบความสำคัญทีละคู่</h3>
-          <span className="slot-address">Saaty 1–9 · {pairs.length} คู่</span>
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+          <h3 className="text-base">เทียบความสำคัญทีละคู่</h3>
+          <span className="addr">Saaty 1–9 · {pairs.length} คู่</span>
         </div>
 
         {pairs.map(([left, right]) => (
@@ -111,9 +111,9 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
 
   return (
     <section className="plan" aria-label="น้ำหนักของแต่ละเกณฑ์">
-      <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">น้ำหนักที่ได้</h3>
-        <span className="slot-address">priority vector</span>
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">น้ำหนักที่ได้</h3>
+        <span className="addr">priority vector</span>
       </div>
 
       <ul>
@@ -136,7 +136,7 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
                   />
                 </div>
               </div>
-              <span className="tnum text-base">{(weight * 100).toFixed(1)}%</span>
+              <span className="fig text-base">{(weight * 100).toFixed(1)}%</span>
             </li>
           );
         })}
@@ -153,9 +153,9 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
 function MatrixTable({ result }: { result: AHPResult<CriterionKey> }) {
   return (
     <section className="plan overflow-x-auto" aria-label="เมทริกซ์เปรียบเทียบ">
-      <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">เมทริกซ์เปรียบเทียบ</h3>
-        <span className="slot-address">ครึ่งล่างคือส่วนกลับ</span>
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">เมทริกซ์เปรียบเทียบ</h3>
+        <span className="addr">ครึ่งล่างคือส่วนกลับ</span>
       </div>
 
       <table className="w-full border-collapse text-small">
@@ -190,7 +190,7 @@ function MatrixTable({ result }: { result: AHPResult<CriterionKey> }) {
                 return (
                   <td
                     key={colKey}
-                    className="tnum border-l border-t border-rule px-2 py-1 text-right"
+                    className="fig border-l border-t border-rule px-2 py-1 text-right"
                     style={{
                       color: isLower ? "var(--color-hull-faint)" : "var(--color-hull)",
                       background: i === j ? "var(--color-plan-sunk)" : undefined,

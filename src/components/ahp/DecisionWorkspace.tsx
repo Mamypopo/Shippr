@@ -241,7 +241,7 @@ export function DecisionWorkspace({
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="border-2 border-hull bg-hull px-4 py-2 text-small text-plan disabled:border-rule disabled:bg-plan-sunk disabled:text-hull-faint"
+            className="btn-solid px-4 py-2 text-small"
           >
             {saving ? "กำลังบันทึก" : "บันทึกการตัดสินใจ"}
           </button>

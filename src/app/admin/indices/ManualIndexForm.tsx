@@ -68,7 +68,7 @@ export function ManualIndexForm() {
 
   return (
     <form onSubmit={handleSubmit} className="plan px-4 py-4">
-      <h2 className="text-small font-medium">กรอกค่าดัชนีสัปดาห์นี้</h2>
+      <h2 className="text-base">กรอกค่าดัชนีสัปดาห์นี้</h2>
       <p className="mt-1 max-w-[62ch] text-micro leading-relaxed text-hull-faint">
         Drewry แสดง WCI เป็นกราฟ ไม่มีตารางให้ดึงอัตโนมัติ ช่องนี้จึงเป็นทางหลักของดัชนีนั้น
         ไม่ใช่ทางสำรอง ค่าที่กรอกที่นี่จะไม่ถูก job อัตโนมัติเขียนทับ
@@ -111,7 +111,7 @@ export function ManualIndexForm() {
             type="date"
             value={periodDate}
             onChange={(e) => setPeriodDate(e.target.value)}
-            className="tnum mt-1 w-full px-2 py-1.5 text-small"
+            className="fig mt-1 w-full px-2 py-1.5 text-small"
             required
           />
         </label>
@@ -126,7 +126,7 @@ export function ManualIndexForm() {
             min="0"
             value={value}
             onChange={(e) => setValue(e.target.value)}
-            className="tnum mt-1 w-full px-2 py-1.5 text-small"
+            className="fig mt-1 w-full px-2 py-1.5 text-small"
             required
           />
         </label>
@@ -136,7 +136,7 @@ export function ManualIndexForm() {
         <button
           type="submit"
           disabled={saving || value === ""}
-          className="border-2 border-hull bg-hull px-4 py-1.5 text-small text-plan disabled:border-rule disabled:bg-plan-sunk disabled:text-hull-faint"
+          className="btn-solid px-4 py-1.5 text-small"
         >
           {saving ? "กำลังบันทึก" : "บันทึกค่า"}
         </button>

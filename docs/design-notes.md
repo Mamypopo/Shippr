@@ -35,30 +35,35 @@ dense screen readable: if a cell is coloured, something needs attention.
 
 | Token      | Hex       | Role                                                  |
 | ---------- | --------- | ----------------------------------------------------- |
-| `--hull`   | `#1B2A32` | Primary ink. A real blue-green, not a tinted black.   |
-| `--deck`   | `#E4E7E3` | Page ground — cool concrete apron grey.               |
-| `--plan`   | `#F5F6F3` | Cell fill, one step up from the deck.                 |
-| `--rule`   | `#A8B2AD` | Hairline grid.                                        |
-| `--rule-heavy` | `#5C6B66` | Plan border, 2px.                                |
-| `--clear`  | `#2F6B4F` | Low risk — reefer green.                              |
-| `--watch`  | `#B5811F` | Moderate — signal ochre.                              |
-| `--hazard` | `#A33027` | High risk — IMDG red oxide.                           |
+| `--hull`   | `#17232B` | Primary ink. A real blue-green, not a tinted black.   |
+| `--deck`   | `#C9CFC8` | Page ground — concrete apron, dark enough that a painted block reads as a block. |
+| `--plan`   | `#FAFAF7` | The drawn sheet.                                      |
+| `--clear`  | `#1F6B4A` | Low risk — solid fill, light ink on top.              |
+| `--watch`  | `#C2761A` | Moderate — container-paint ochre.                     |
+| `--hazard` | `#9B2F24` | High risk — IMDG red oxide.                           |
 
-Deliberately not: cream + serif + terracotta (`#D97757` and its neighbours),
-and not near-black with one acid accent. The ground is cool, the accents are
-three signal colours rather than one decorative one, and they are assigned by
-data rather than by taste.
+Status colours are used as **solid fills**, not tints. A bay plan is read as a
+shape before a single figure is read, and whisper-tinted cells cannot do that.
+
+Deliberately not: cream + serif + terracotta (`#D97757` and neighbours), and
+not near-black with one acid accent — there are three signal colours here and
+they are assigned by data, not by taste.
 
 ### Type
 
-- **IBM Plex Sans Thai** — all prose and labels. Thai and Latin from one
-  superfamily, with a drafting-office character that suits the document.
-- **IBM Plex Mono** — every figure, code and matrix cell. Not for decorative
-  small labels: mono is here because a bay plan and a terminal printout are
-  monospaced, and because columns of rates only compare if the digits align.
+- **Chakra Petch** — every heading and figure. Angular and squared off, the
+  vernacular of stencilled markings on container doors and port machinery.
+- **Anuphan** — prose. A calm geometric Thai sans.
 
-Scale, major third from 16: 11 / 13 / 16 / 20 / 25 / 31 / 39 / 49.
-Hero figures at 39–49. Thai body gets extra line-height for its ascenders.
+Both are Thai-first families. Neither is the Plex-plus-monospace pairing that
+makes technical pages interchangeable.
+
+Figures use `tabular-nums` on Chakra Petch rather than a monospace face, so a
+column of rates still reads straight down without importing the
+terminal-printout look.
+
+Scale, major third from 16: 12 / 14 / 16 / 20 / 25 / 39 / 49 / 61.
+Thai body gets extra line-height for its ascenders.
 
 No all-caps labels. No eyebrow text above headings.
 
@@ -115,3 +120,22 @@ No scroll reveals, no hover lifts. `prefers-reduced-motion` turns it off.
 
 - 2026-10-03 — first pass. Direction and language confirmed with the client
   before building.
+- 2026-10-03 — **second pass, after the client said it looked like every other
+  technical site.** They were right, and the fault was in the execution rather
+  than the direction. The first pass had hairline-outlined boxes on near-white
+  with monospace micro-labels, which is cliché #3 plus the monospace-label tell
+  the brief warns about — and, more to the point, it is not what a stowage plan
+  looks like. A plan is a mosaic of solid painted blocks.
+
+  Changed:
+  - Status colours became solid fills instead of 10%-opacity tints. The port
+    grid is now the hero and reads as a shape at a glance.
+  - Dropped IBM Plex and all monospace. Chakra Petch (angular, stencil-like)
+    for headings and figures, Anuphan for prose — both Thai-first.
+  - Ground darkened from `#E4E7E3` to `#C9CFC8` so a painted block has
+    something to sit on.
+  - Plan frame went from 2px to 3px solid ink; buttons became painted blocks
+    rather than outlined chips.
+  - Removed the `.slot-address` monospace micro-label, the single strongest
+    tell. Addresses now sit in the display face inside the painted cell.
+  - The page opens on the mosaic rather than on a summary card.

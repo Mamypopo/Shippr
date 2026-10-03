@@ -28,14 +28,14 @@ export default async function DecisionsPage() {
     <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="plan flex flex-wrap items-baseline justify-between gap-3 px-4 py-4">
         <div>
-          <h1 className="text-lead font-medium">การตัดสินใจที่บันทึกไว้</h1>
+          <h1 className="text-lead">การตัดสินใจที่บันทึกไว้</h1>
           <p className="mt-1 text-small text-hull-soft">
             ทุกรายการเก็บเมทริกซ์ น้ำหนัก และค่าระวางตลาด ณ วันที่ตัดสินใจไว้ครบ
           </p>
         </div>
         <Link
           href="/decisions/new"
-          className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+          className="btn px-3.5 py-1.5 text-small"
         >
           เริ่มรายการใหม่
         </Link>
@@ -62,13 +62,13 @@ export default async function DecisionsPage() {
                     <p className="mt-1 flex flex-wrap gap-x-4 text-micro text-hull-faint">
                       <span>เลือก {decision.winnerCarrier || "—"}</span>
                       <span>{routeLabel(decision.routeCode)}</span>
-                      <span className="tnum">{decision._count.quotes} สายเรือ</span>
+                      <span className="fig">{decision._count.quotes} สายเรือ</span>
                       <span>{thaiFullDate(decision.createdAt)}</span>
                     </p>
                   </div>
 
                   <span
-                    className="tnum text-small"
+                    className="fig text-small"
                     style={{
                       color: decision.isConsistent
                         ? "var(--color-hull-faint)"

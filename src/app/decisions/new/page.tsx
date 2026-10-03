@@ -28,7 +28,7 @@ export default async function NewDecisionPage() {
   return (
     <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="plan px-4 py-4">
-        <h1 className="text-lead font-medium">เปรียบเทียบสายเรือด้วย AHP</h1>
+        <h1 className="text-lead">เปรียบเทียบสายเรือด้วย AHP</h1>
         <p className="mt-2 max-w-[70ch] text-small leading-relaxed text-hull-soft">
           กรอกใบเสนอราคา 2–5 สาย แล้วบอกระบบว่าเกณฑ์ไหนสำคัญกว่ากันทีละคู่
           อันดับจะขยับตามทันทีที่คุณเลื่อน และระบบจะเตือนถ้าคำตอบขัดแย้งกันเอง

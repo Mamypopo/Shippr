@@ -35,7 +35,7 @@ export default async function AdminIndicesPage() {
   return (
     <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="plan px-4 py-4">
-        <h1 className="text-lead font-medium">กรอกข้อมูลตลาด</h1>
+        <h1 className="text-lead">กรอกข้อมูลตลาด</h1>
         <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-hull-soft">
           ดูสถานะการดึงข้อมูลอัตโนมัติ และกรอกค่าดัชนีที่ดึงเองไม่ได้
         </p>
@@ -55,7 +55,7 @@ export default async function AdminIndicesPage() {
           {!user && (
             <Link
               href="/signin"
-              className="mt-3 inline-block border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+              className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
             >
               เข้าสู่ระบบ
             </Link>
@@ -64,8 +64,8 @@ export default async function AdminIndicesPage() {
       )}
 
       <section className="plan overflow-x-auto">
-        <div className="border-b border-rule px-4 py-2">
-          <h2 className="text-small font-medium">ค่าที่บันทึกล่าสุด</h2>
+        <div className="border-b-2 border-hull px-4 py-2.5">
+          <h2 className="text-base">ค่าที่บันทึกล่าสุด</h2>
         </div>
 
         {recent.length === 0 ? (
@@ -84,14 +84,14 @@ export default async function AdminIndicesPage() {
             <tbody>
               {recent.map((row) => (
                 <tr key={row.id}>
-                  <td className="tnum border-t border-rule px-3 py-2">
+                  <td className="fig border-t border-rule px-3 py-2">
                     {thaiShortDate(row.periodDate)}
                   </td>
                   <td className="border-l border-t border-rule px-3 py-2">{row.indexCode}</td>
                   <td className="border-l border-t border-rule px-3 py-2">
                     {routeLabel(row.routeCode)}
                   </td>
-                  <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                  <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                     {formatIndexValue(toNumber(row.value), row.unit)}
                   </td>
                   <td className="border-l border-t border-rule px-3 py-2 text-micro text-hull-faint">
@@ -125,8 +125,8 @@ function IngestionStatus({
 }) {
   return (
     <section className="plan">
-      <div className="border-b border-rule px-4 py-2">
-        <h2 className="text-small font-medium">สถานะการดึงข้อมูลอัตโนมัติ</h2>
+      <div className="border-b-2 border-hull px-4 py-2.5">
+        <h2 className="text-base">สถานะการดึงข้อมูลอัตโนมัติ</h2>
       </div>
 
       <div className="grid grid-cols-1 sm:grid-cols-3">
@@ -156,7 +156,7 @@ function IngestionStatus({
                   </p>
                   <p className="mt-1 text-micro text-hull-faint">
                     {relativeDaysTh(run.startedAt)} · เขียน{" "}
-                    <span className="tnum">{run.rowsWritten}</span> แถว
+                    <span className="fig">{run.rowsWritten}</span> แถว
                   </p>
                 </>
               ) : (

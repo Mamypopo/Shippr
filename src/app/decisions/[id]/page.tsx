@@ -26,7 +26,7 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
       <header className="plan px-4 py-4">
         <div className="flex flex-wrap items-start justify-between gap-4">
           <div>
-            <h1 className="text-lead font-medium">{decision.title}</h1>
+            <h1 className="text-lead">{decision.title}</h1>
             <p className="mt-1 flex flex-wrap gap-x-4 text-micro text-hull-faint">
               <span>{thaiFullDate(decision.createdAt)}</span>
               <span>{routeLabel(decision.routeCode)}</span>
@@ -37,19 +37,19 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
           <nav className="no-print flex flex-wrap gap-2">
             <Link
               href={`/decisions/${id}/memo`}
-              className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+              className="btn px-3.5 py-1.5 text-small"
             >
               เปิด memo สำหรับพิมพ์
             </Link>
             <a
               href={`/api/export/${id}?format=xlsx`}
-              className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+              className="btn px-3.5 py-1.5 text-small"
             >
               ดาวน์โหลด Excel
             </a>
             <a
               href={`/api/export/${id}?format=json`}
-              className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+              className="btn px-3.5 py-1.5 text-small"
             >
               ดาวน์โหลด JSON
             </a>
@@ -71,8 +71,8 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1fr_1fr]">
         <section className="plan">
-          <div className="border-b border-rule px-4 py-2">
-            <h2 className="text-small font-medium">อันดับและคะแนน</h2>
+          <div className="border-b-2 border-hull px-4 py-2.5">
+            <h2 className="text-base">อันดับและคะแนน</h2>
           </div>
           <ol>
             {ranking.map((entry) => (
@@ -82,10 +82,10 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
               >
                 <div className="flex items-baseline justify-between gap-3">
                   <p className="text-base">
-                    <span className="tnum mr-2 text-hull-faint">{entry.rank}</span>
+                    <span className="fig mr-2 text-hull-faint">{entry.rank}</span>
                     {entry.label}
                   </p>
-                  <span className="tnum text-figure-sm leading-none">
+                  <span className="fig text-figure-sm leading-none">
                     {entry.score100.toFixed(1)}
                   </span>
                 </div>
@@ -105,9 +105,9 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
         </section>
 
         <section className="plan">
-          <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-            <h2 className="text-small font-medium">น้ำหนักเกณฑ์</h2>
-            <span className="slot-address">
+          <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+            <h2 className="text-base">น้ำหนักเกณฑ์</h2>
+            <span className="addr">
               λmax {decision.lambdaMax.toFixed(3)} · CI {decision.consistencyIndex.toFixed(3)} · CR{" "}
               {decision.consistencyRatio.toFixed(3)}
             </span>
@@ -119,7 +119,7 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
                 className="flex items-baseline justify-between gap-3 border-t border-rule px-4 py-2 first:border-t-0"
               >
                 <span className="text-small">{CRITERION_LABELS[key].th}</span>
-                <span className="tnum text-small">
+                <span className="fig text-small">
                   {((weights[key] ?? 0) * 100).toFixed(1)}%
                 </span>
               </li>
@@ -129,8 +129,8 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
       </div>
 
       <section className="plan overflow-x-auto">
-        <div className="border-b border-rule px-4 py-2">
-          <h2 className="text-small font-medium">ใบเสนอราคาที่ใช้ตัดสินใจ</h2>
+        <div className="border-b-2 border-hull px-4 py-2.5">
+          <h2 className="text-base">ใบเสนอราคาที่ใช้ตัดสินใจ</h2>
         </div>
         <table className="w-full border-collapse text-small">
           <thead>
@@ -154,16 +154,16 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
                     <span className="ml-2 text-micro text-hull-faint">{quote.serviceName}</span>
                   )}
                 </th>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {formatUsd(toNumber(quote.oceanFreightUsd))}
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {formatUsd(toNumber(quote.localChargesUsd))}
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {quote.freeTimeDays} วัน
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {quote.transitDays} วัน
                   {!quote.isDirect && (
                     <span className="ml-1 text-micro text-hull-faint">
@@ -171,13 +171,13 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
                     </span>
                   )}
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {toNumber(quote.onTimePct).toFixed(0)}%
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {quote.equipmentAvailabilityScore}/10
                 </td>
-                <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                <td className="fig border-l border-t border-rule px-3 py-2 text-right">
                   {quote.serviceScore}/10
                 </td>
               </tr>
@@ -188,7 +188,7 @@ export default async function DecisionDetailPage(props: PageProps<"/decisions/[i
 
       {decision.notes && (
         <section className="plan px-4 py-4">
-          <h2 className="text-small font-medium">บันทึกเพิ่มเติม</h2>
+          <h2 className="text-base">บันทึกเพิ่มเติม</h2>
           <p className="mt-2 max-w-[70ch] whitespace-pre-wrap text-small leading-relaxed">
             {decision.notes}
           </p>

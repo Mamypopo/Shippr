@@ -81,7 +81,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
 
   return (
     <form onSubmit={handleSubmit} className="plan px-4 py-4">
-      <h2 className="text-small font-medium">บันทึกเวลารอเทียบท่า</h2>
+      <h2 className="text-base">บันทึกเวลารอเทียบท่า</h2>
       <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-hull-faint">
         ค่าเฉลี่ย 7 วันจากรายงานที่บริษัทใช้ ระบบจะจัดระดับความเสี่ยงให้อัตโนมัติ
       </p>
@@ -108,7 +108,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
             type="date"
             value={observedOn}
             onChange={(e) => setObservedOn(e.target.value)}
-            className="tnum mt-1 w-full px-2 py-1.5 text-small"
+            className="fig mt-1 w-full px-2 py-1.5 text-small"
             required
           />
         </label>
@@ -121,7 +121,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
             min="0"
             value={avgWaitDays}
             onChange={(e) => setAvgWaitDays(e.target.value)}
-            className="tnum mt-1 w-full px-2 py-1.5 text-small"
+            className="fig mt-1 w-full px-2 py-1.5 text-small"
             required
           />
         </label>
@@ -133,7 +133,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
             min="0"
             value={vesselsWaiting}
             onChange={(e) => setVesselsWaiting(e.target.value)}
-            className="tnum mt-1 w-full px-2 py-1.5 text-small"
+            className="fig mt-1 w-full px-2 py-1.5 text-small"
           />
         </label>
       </div>
@@ -160,7 +160,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         <button
           type="submit"
           disabled={saving || avgWaitDays === ""}
-          className="border-2 border-hull bg-hull px-4 py-1.5 text-small text-plan disabled:border-rule disabled:bg-plan-sunk disabled:text-hull-faint"
+          className="btn-solid px-4 py-1.5 text-small"
         >
           {saving ? "กำลังบันทึก" : "บันทึก"}
         </button>
@@ -215,7 +215,7 @@ function CsvImportForm() {
 
   return (
     <form onSubmit={handleSubmit} className="plan px-4 py-4">
-      <h2 className="text-small font-medium">นำเข้าทั้งสัปดาห์จาก CSV</h2>
+      <h2 className="text-base">นำเข้าทั้งสัปดาห์จาก CSV</h2>
       <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-hull-faint">
         แถวที่ผิดจะถูกข้ามและรายงานทีละแถว ไม่ทำให้ทั้งไฟล์ตกไปด้วย
       </p>
@@ -235,7 +235,7 @@ function CsvImportForm() {
         <button
           type="submit"
           disabled={!file || busy}
-          className="border-2 border-hull bg-hull px-4 py-1.5 text-small text-plan disabled:border-rule disabled:bg-plan-sunk disabled:text-hull-faint"
+          className="btn-solid px-4 py-1.5 text-small"
         >
           {busy ? "กำลังนำเข้า" : "นำเข้าไฟล์"}
         </button>
@@ -245,7 +245,7 @@ function CsvImportForm() {
       {result && (
         <div className="mt-3 text-small">
           <p style={{ color: "var(--color-clear)" }}>
-            นำเข้าสำเร็จ <span className="tnum">{result.imported}</span> แถว
+            นำเข้าสำเร็จ <span className="fig">{result.imported}</span> แถว
           </p>
           {result.errors.length > 0 && (
             <ul className="mt-2 flex flex-col gap-1 text-micro text-hazard">

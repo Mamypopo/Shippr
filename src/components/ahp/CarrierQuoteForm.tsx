@@ -49,9 +49,9 @@ export function CarrierQuoteForm({
 }) {
   return (
     <section className="plan" aria-label="ใบเสนอราคาสายเรือ">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">ใบเสนอราคา</h3>
-        <span className="slot-address">{quotes.length}/5 สายเรือ</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">ใบเสนอราคา</h3>
+        <span className="addr">{quotes.length}/5 สายเรือ</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
@@ -72,7 +72,7 @@ export function CarrierQuoteForm({
           <button
             type="button"
             onClick={onAdd}
-            className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+            className="btn px-3.5 py-1.5 text-small"
           >
             เพิ่มสายเรือ
           </button>
@@ -98,9 +98,9 @@ function QuoteColumn({
   const cost = computeCost(quote);
 
   return (
-    <article className="border-t border-rule p-4 first:border-t-0 md:border-l md:[&:nth-child(2n+1)]:border-l-0 xl:[&:nth-child(2n+1)]:border-l xl:[&:nth-child(3n+1)]:border-l-0">
+    <article className="border-t border-rule p-4 first:border-t-0 md:border-l md:nth-[2n+1]:border-l-0 xl:nth-[2n+1]:border-l xl:nth-[3n+1]:border-l-0">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="slot-address">สายที่ {index + 1}</span>
+        <span className="addr">สายที่ {index + 1}</span>
         {canRemove && (
           <button
             type="button"
@@ -162,12 +162,12 @@ function QuoteColumn({
       {/* Making the credit visible is the point: it is why a dearer headline
           rate can still be the cheaper booking. */}
       <p className="mt-1 border-t border-rule pt-2 text-micro text-hull-soft">
-        ต้นทุนรวม <span className="tnum">{formatUsd(cost.grossCostUsd)}</span>
+        ต้นทุนรวม <span className="fig">{formatUsd(cost.grossCostUsd)}</span>
         {cost.freeTimeCreditUsd > 0 && (
           <>
             {" "}
-            − free time <span className="tnum">{formatUsd(cost.freeTimeCreditUsd)}</span> ={" "}
-            <span className="tnum font-medium text-hull">
+            − free time <span className="fig">{formatUsd(cost.freeTimeCreditUsd)}</span> ={" "}
+            <span className="fig font-medium text-hull">
               {formatUsd(cost.effectiveCostUsd)}
             </span>
           </>
@@ -287,7 +287,7 @@ function NumberField({
           value={Number.isFinite(value) ? value : 0}
           min={0}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="tnum w-24 px-2 py-1 text-right text-small"
+          className="fig w-24 px-2 py-1 text-right text-small"
         />
         {suffix && <span className="w-8 text-micro text-hull-faint">{suffix}</span>}
       </span>
@@ -317,7 +317,7 @@ function ScoreField({
           onChange={(e) => onChange(Number(e.target.value))}
           className="w-24 accent-[var(--color-hull)]"
         />
-        <span className="tnum w-6 text-right">{value}</span>
+        <span className="fig w-6 text-right">{value}</span>
       </span>
     </label>
   );

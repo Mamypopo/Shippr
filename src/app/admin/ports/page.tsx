@@ -26,7 +26,7 @@ export default async function AdminPortsPage() {
   return (
     <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="plan px-4 py-4">
-        <h1 className="text-lead font-medium">ความแออัดของท่าเรือ</h1>
+        <h1 className="text-lead">ความแออัดของท่าเรือ</h1>
         <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-hull-soft">
           ไม่มี API ฟรีที่เชื่อถือได้สำหรับเวลารอเทียบท่า ข้อมูลส่วนนี้จึงมาจากการกรอก
           หรือนำเข้า CSV รายสัปดาห์จากรายงานที่บริษัทใช้
@@ -47,7 +47,7 @@ export default async function AdminPortsPage() {
           {!user && (
             <Link
               href="/signin"
-              className="mt-3 inline-block border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+              className="mt-3 inline-block btn px-3.5 py-1.5 text-small"
             >
               เข้าสู่ระบบ
             </Link>

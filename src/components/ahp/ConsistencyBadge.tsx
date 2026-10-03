@@ -27,14 +27,14 @@ export function ConsistencyBadge({
       aria-live="polite"
       style={{ borderColor: ink }}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">ความสอดคล้องของการให้น้ำหนัก</h3>
-        <span className="slot-address">CR &lt; {CR_THRESHOLD.toFixed(2)} ถือว่าใช้ได้</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">ความสอดคล้องของการให้น้ำหนัก</h3>
+        <span className="addr">CR &lt; {CR_THRESHOLD.toFixed(2)} ถือว่าใช้ได้</span>
       </div>
 
       <div className="flex flex-wrap items-end gap-x-8 gap-y-3 px-4 py-3">
         <div>
-          <p className="tnum text-figure leading-none font-medium" style={{ color: ink }}>
+          <p className="fig text-figure leading-none font-medium" style={{ color: ink }}>
             {consistencyRatio.toFixed(3)}
           </p>
           <p className="mt-1 text-micro text-hull-faint">Consistency Ratio</p>
@@ -43,11 +43,11 @@ export function ConsistencyBadge({
         <dl className="flex gap-x-6 text-small">
           <div>
             <dt className="text-micro text-hull-faint">λmax</dt>
-            <dd className="tnum">{lambdaMax.toFixed(4)}</dd>
+            <dd className="fig">{lambdaMax.toFixed(4)}</dd>
           </div>
           <div>
             <dt className="text-micro text-hull-faint">CI</dt>
-            <dd className="tnum">{consistencyIndex.toFixed(4)}</dd>
+            <dd className="fig">{consistencyIndex.toFixed(4)}</dd>
           </div>
         </dl>
 
@@ -74,9 +74,9 @@ export function ConsistencyBadge({
                 <strong className="font-medium">
                   {CRITERION_LABELS[hint.colKey as CriterionKey].th}
                 </strong>{" "}
-                <span className="tnum">{formatRatio(hint.entered)}</span> เท่า
+                <span className="fig">{formatRatio(hint.entered)}</span> เท่า
                 แต่คำตอบอื่นของคุณสื่อว่าควรเป็นราว{" "}
-                <span className="tnum">{formatRatio(hint.suggested)}</span> เท่า
+                <span className="fig">{formatRatio(hint.suggested)}</span> เท่า
                 {onApplySuggestion && (
                   <button
                     type="button"
@@ -87,7 +87,7 @@ export function ConsistencyBadge({
                         hint.suggested,
                       )
                     }
-                    className="ml-2 border border-rule-heavy bg-plan px-2 py-0.5 text-micro hover:bg-plan-sunk"
+                    className="ml-2 btn px-2 py-0.5 text-micro"
                   >
                     ปรับให้
                   </button>

@@ -10,7 +10,7 @@ export function PrintButton() {
     <button
       type="button"
       onClick={() => window.print()}
-      className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+      className="btn px-3.5 py-1.5 text-small"
     >
       พิมพ์ หรือบันทึกเป็น PDF
     </button>

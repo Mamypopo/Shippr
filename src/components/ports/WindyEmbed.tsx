@@ -24,9 +24,9 @@ export function WindyEmbed({
 
   return (
     <section className="plan" aria-label="เรดาร์ลมและพายุ">
-      <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-        <h2 className="text-small font-medium">ลมและพายุในเส้นทางเดินเรือ</h2>
-        <span className="slot-address">windy.com</span>
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+        <h2 className="text-base">ลมและพายุในเส้นทางเดินเรือ</h2>
+        <span className="addr">windy.com</span>
       </div>
 
       {loaded ? (
@@ -47,7 +47,7 @@ export function WindyEmbed({
           <button
             type="button"
             onClick={() => setLoaded(true)}
-            className="border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+            className="btn px-3.5 py-1.5 text-small"
           >
             เปิดแผนที่
           </button>

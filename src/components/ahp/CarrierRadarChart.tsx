@@ -47,9 +47,9 @@ export function CarrierRadarChart({
 
   return (
     <section className="plan" aria-label="จุดแข็งรายเกณฑ์ของแต่ละสายเรือ">
-      <div className="flex items-baseline justify-between gap-4 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">จุดแข็งรายเกณฑ์</h3>
-        <span className="slot-address">ยังไม่ถ่วงน้ำหนัก</span>
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">จุดแข็งรายเกณฑ์</h3>
+        <span className="addr">ยังไม่ถ่วงน้ำหนัก</span>
       </div>
 
       <div className="h-[22rem] px-2 py-3">

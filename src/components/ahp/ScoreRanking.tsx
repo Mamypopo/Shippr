@@ -39,13 +39,13 @@ export function ScoreRanking({
 
   return (
     <section className="plan" aria-label="อันดับสายเรือ">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-rule px-4 py-2">
-        <h3 className="text-small font-medium">อันดับสายเรือ</h3>
-        <span className="slot-address">คะแนน 0–100 เทียบกับอันดับหนึ่ง</span>
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+        <h3 className="text-base">อันดับสายเรือ</h3>
+        <span className="addr">คะแนน 0–100 เทียบกับอันดับหนึ่ง</span>
       </div>
 
       {!isConsistent && (
-        <p className="border-b border-rule px-4 py-2 text-micro text-hazard">
+        <p className="border-b-2 border-hull px-4 py-2.5 text-micro text-hazard">
           อันดับนี้คำนวณจากน้ำหนักที่ยังขัดแย้งกันเอง (CR เกิน 0.1) —
           ปรับความสอดคล้องก่อนนำไปใช้อ้างอิง
         </p>
@@ -62,10 +62,10 @@ export function ScoreRanking({
             >
               <div className="flex items-baseline justify-between gap-3">
                 <h4 className="text-base font-medium">
-                  <span className="tnum mr-2 text-hull-faint">{entry.rank}</span>
+                  <span className="fig mr-2 text-hull-faint">{entry.rank}</span>
                   {entry.label}
                 </h4>
-                <span className="tnum text-figure-sm leading-none font-medium">
+                <span className="fig text-figure-sm leading-none font-medium">
                   {entry.score100.toFixed(1)}
                 </span>
               </div>
@@ -90,7 +90,7 @@ export function ScoreRanking({
                 {(Object.keys(entry.localScores) as CriterionKey[]).map((key) => (
                   <div key={key} className="flex gap-1">
                     <dt>{CRITERION_LABELS[key].th}</dt>
-                    <dd className="tnum text-hull-soft">
+                    <dd className="fig text-hull-soft">
                       {(entry.localScores[key] * 100).toFixed(0)}
                     </dd>
                   </div>
