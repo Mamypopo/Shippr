@@ -26,15 +26,20 @@ export default async function AdminVesselsPage() {
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="panel px-4 py-4">
         <div className="flex items-start justify-between gap-3">
-          <h1 className="text-lead">ติดตามเรือ</h1>
+          <h1 className="text-lead">
+            ติดตามเรือ <span className="label align-middle" style={{ color: "var(--color-warn)" }}>BETA</span>
+          </h1>
           {user && <RunIngestionButton jobKey="vessel-tracking" label="ตำแหน่งเรือที่ติดตาม" />}
         </div>
         <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-ink-soft">
-          ติดตามเรือเฉพาะลำที่มีสินค้าของเราอยู่จริง ด้วยหมายเลข MMSI (ระบบ AIS)
-          ไม่ใช่แผนที่ภาพรวมแบบหน้าแรก — ตำแหน่งอัปเดตทุก 15 นาทีก็ต่อเมื่อตั้งค่า GitHub Actions
-          ไว้แล้วบน deployment จริง (ดู README) ถ้ายังไม่ได้ตั้งค่า หรืออยากดึงตำแหน่งทันทีไม่ต้องรอ
-          กดปุ่ม &quot;ดึงตอนนี้&quot; ด้านบนได้เลย — เรือจะมีตำแหน่งให้เห็นก็ต่อเมื่อเรือส่งสัญญาณ AIS
-          อยู่ในช่วงเวลาที่ระบบฟังอยู่พอดี (ไม่ได้การันตีว่ากดแล้วจะเจอทันทีเสมอไป)
+          ติดตามเรือเฉพาะลำที่มีสินค้าของเราอยู่จริง ด้วยหมายเลข MMSI ผ่าน aisstream.io —
+          บริการฟรีที่รับสัญญาณจากเครื่องรับของอาสาสมัครทั่วโลก ซึ่งหนาแน่นมากในยุโรป/อเมริกา
+          แต่ <strong>บางมากในอ่าวไทย</strong> (ทดสอบแล้วไม่พบสัญญาณจากอ่าวไทยเลยในการทดสอบหลายรอบ)
+          พูดตรงๆ คือ <strong>ไม่ควรใช้พึ่งตอนเรือใกล้ถึงท่าแหลมฉบัง</strong> ซึ่งเป็นช่วงที่ต้องการข้อมูลที่สุดพอดี
+        </p>
+        <p className="mt-2 max-w-[70ch] text-small leading-relaxed text-ink-soft">
+          ใช้ได้ดีกว่าตอนเรืออยู่ในเขตที่มีสัญญาณหนาแน่น (เช่น ใกล้สิงคโปร์ ยุโรป อเมริกา) ถ้าตำแหน่งล่าสุด
+          เก่าเกิน 6 ชั่วโมง ระบบจะเปลี่ยนไปโชว์ปุ่มลิงก์ไปดูสดบน MarineTraffic แทนการโชว์ตัวเลขเก่าที่อาจทำให้เข้าใจผิด
         </p>
       </header>
 
