@@ -3,7 +3,7 @@ import Link from "next/link";
 import { getSessionUser } from "@/lib/auth";
 import { prisma, toNumber } from "@/lib/db";
 import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "@/lib/format";
-import { latestRunsBySource } from "@/lib/ingest";
+import { latestRunsBySource, type LatestRun } from "@/lib/ingest";
 import { routeLabel } from "@/lib/benchmark";
 import { ManualIndexForm } from "./ManualIndexForm";
 import { RunIngestionButton } from "./RunIngestionButton";
@@ -111,11 +111,24 @@ const RUN_SOURCES: Array<{ key: string; label: string }> = [
  * quietly failing for a fortnight looks exactly like a quiet market unless
  * someone says so.
  */
+/**
+ * "สำเร็จบางส่วน" alone, next to a row count of zero, reads as a vague kind
+ * of working — it isn't clear whether that means nothing happened or
+ * something quietly failed. This spells out which, so "the fetch worked but
+ * wrote nothing" and "the fetch partly failed" never look the same.
+ */
+function runStatusLabel(run: LatestRun): string {
+  if (run.status === "FAILED") return "ล้มเหลว";
+
+  const base = run.status === "SUCCESS" ? "สำเร็จ" : "สำเร็จบางส่วน";
+  return run.rowsWritten === 0 ? `${base} — ไม่มีข้อมูลใหม่` : base;
+}
+
 function IngestionStatus({
   runs,
   canRun,
 }: {
-  runs: Record<string, { status: string; startedAt: Date; rowsWritten: number } | undefined>;
+  runs: Record<string, LatestRun | undefined>;
   canRun: boolean;
 }) {
   return (
@@ -147,16 +160,20 @@ function IngestionStatus({
               {run ? (
                 <>
                   <p className="mt-1 text-small" style={{ color: ink }}>
-                    {run.status === "SUCCESS"
-                      ? "สำเร็จ"
-                      : run.status === "PARTIAL"
-                        ? "สำเร็จบางส่วน"
-                        : "ล้มเหลว"}
+                    {runStatusLabel(run)}
                   </p>
                   <p className="mt-1 text-micro text-ink-faint">
                     {relativeDaysTh(run.startedAt)} · เขียน{" "}
                     <span className="fig">{run.rowsWritten}</span> แถว
                   </p>
+                  {/* The explanation behind a partial/failed/zero-row run —
+                      kept on the page rather than only in the toast that
+                      closes a few seconds after the button is clicked. */}
+                  {run.errorMessage && (
+                    <p className="mt-2 border-t border-line pt-2 text-micro leading-relaxed text-ink-soft">
+                      {run.errorMessage}
+                    </p>
+                  )}
                 </>
               ) : (
                 <p className="mt-1 text-small" style={{ color: ink }}>

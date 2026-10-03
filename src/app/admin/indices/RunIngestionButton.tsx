@@ -33,13 +33,26 @@ export function RunIngestionButton({ jobKey, label }: { jobKey: string; label: s
 
       // A 500 here means the job ran and every source inside it failed —
       // still a completed run worth reporting, not a request-level error.
-      const written = body.rowsWritten ?? 0;
+      const written: number = body.rowsWritten ?? 0;
+      // `body.error` on lib/jobs.ts carries more than failures — it also
+      // explains a successful scrape that wrote nothing because the period
+      // was already entered by hand, so it's worth showing even on SUCCESS.
+      const note = body.error ? ` — ${body.error}` : "";
+
       if (body.status === "SUCCESS") {
-        toast.success(`${label}: ดึงสำเร็จ เขียน ${written} แถว`);
+        toast.success(
+          written > 0
+            ? `${label}: ดึงสำเร็จ เขียน ${written} แถว${note}`
+            : `${label}: ดึงสำเร็จ แต่ไม่มีข้อมูลใหม่${note}`,
+        );
       } else if (body.status === "PARTIAL") {
-        toast.info(`${label}: สำเร็จบางส่วน เขียน ${written} แถว — ${body.error ?? ""}`);
+        toast.info(
+          written > 0
+            ? `${label}: สำเร็จบางส่วน เขียน ${written} แถว${note}`
+            : `${label}: สำเร็จบางส่วน แต่ไม่มีข้อมูลใหม่${note}`,
+        );
       } else {
-        toast.error(`${label}: ล้มเหลวทั้งหมด — ${body.error ?? "ไม่ทราบสาเหตุ"}`);
+        toast.error(`${label}: ล้มเหลวทั้งหมด${note || " — ไม่ทราบสาเหตุ"}`);
       }
 
       router.refresh();

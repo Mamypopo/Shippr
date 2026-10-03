@@ -31,6 +31,15 @@ export async function runFreightIndexJob(): Promise<RunSummary> {
     const result = await upsertFreightIndices(outcome.rows, "SCRAPER");
     rowsWritten += result.written;
     if (result.errors.length > 0) errors.push(`${outcome.label}: ${result.errors.join("; ")}`);
+
+    // A successful scrape that writes nothing because a human already
+    // entered this period is not a problem — but staying silent about it
+    // makes "0 rows written" next to a green status read as a bug report.
+    if (result.skippedManual.length > 0) {
+      errors.push(
+        `${outcome.label}: ดึงได้ค่าปกติ แต่ไม่บันทึกทับข้อมูลที่กรอกมือไว้แล้วสำหรับ ${result.skippedManual.join(", ")}`,
+      );
+    }
   }
 
   const okCount = outcomes.filter((o) => o.ok).length;
@@ -63,6 +72,12 @@ export async function runMarketSentimentJob(): Promise<RunSummary> {
     const result = await upsertFreightIndices(outcome.rows, "YAHOO");
     rowsWritten += result.written;
     if (result.errors.length > 0) errors.push(`${outcome.symbol}: ${result.errors.join("; ")}`);
+
+    if (result.skippedManual.length > 0) {
+      errors.push(
+        `${outcome.symbol}: ดึงได้ค่าปกติ แต่ไม่บันทึกทับข้อมูลที่กรอกมือไว้แล้วสำหรับ ${result.skippedManual.join(", ")}`,
+      );
+    }
   }
 
   const okCount = outcomes.filter((o) => o.ok).length;
