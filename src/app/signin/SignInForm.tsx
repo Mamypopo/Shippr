@@ -41,7 +41,7 @@ export function SignInForm() {
 
   if (state === "sent") {
     return (
-      <p className="mt-5 text-small leading-relaxed" style={{ color: "var(--color-clear)" }}>
+      <p className="mt-5 text-small leading-relaxed" style={{ color: "var(--color-ok)" }}>
         ส่งลิงก์เข้าสู่ระบบไปที่ {email} แล้ว เปิดลิงก์ในอีเมลเพื่อเข้าใช้งาน
         ลิงก์ใช้ได้ครั้งเดียวและหมดอายุใน 1 ชั่วโมง
       </p>
@@ -51,7 +51,7 @@ export function SignInForm() {
   return (
     <form onSubmit={handleSubmit} className="mt-5">
       <label className="block">
-        <span className="block text-micro text-hull-faint">อีเมล</span>
+        <span className="block text-micro text-ink-faint">อีเมล</span>
         <input
           type="email"
           value={email}
@@ -66,12 +66,12 @@ export function SignInForm() {
       <button
         type="submit"
         disabled={state === "sending" || email.trim() === ""}
-        className="mt-4 w-full btn-solid px-4 py-2 text-small"
+        className="mt-4 w-full btn-primary px-4 py-2 text-small"
       >
         {state === "sending" ? "กำลังส่งลิงก์" : "ส่งลิงก์เข้าสู่ระบบ"}
       </button>
 
-      {state === "error" && <p className="mt-3 text-small text-hazard">{message}</p>}
+      {state === "error" && <p className="mt-3 text-small text-bad">{message}</p>}
     </form>
   );
 }

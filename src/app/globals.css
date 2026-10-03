@@ -1,184 +1,229 @@
 @import "tailwindcss";
 
 /*
- * Shippr — stowage plan, second pass.
+ * Shippr — minimal.
  *
- * The first pass drifted into hairline boxes on near-white with monospace
- * labels, which is the house style of every technical site and says nothing
- * about containers. A real bay plan is not a set of outlined boxes: it is a
- * mosaic of solid painted blocks that you read as a shape before you read a
- * single figure. This pass commits to that — large saturated fills, a ground
- * dark enough for them to sit on, and no monospace outside the one table
- * where column alignment does actual work.
+ * The client pinned this direction with references: white ground, near-black
+ * text, 1px hairline panels, generous whitespace, small uppercase monospace
+ * labels for metadata, solid black calls to action. Follow it exactly.
  *
- * Colour still means risk, and only risk. See docs/design-notes.md.
+ * Colour is reserved for risk state and for nothing else. On a page this
+ * quiet, a single coloured mark carries real weight — which is the whole
+ * reason to keep the rest monochrome.
  */
 
 @theme {
-  /* Ink and ground */
-  --color-hull: #17232b;
-  --color-hull-soft: #46565e;
-  --color-hull-faint: #74838a;
-  --color-deck: #c9cfc8;
-  --color-plan: #fafaf7;
-  --color-plan-sunk: #dfe2dc;
+  --color-ink: #111111;
+  --color-ink-soft: #565656;
+  --color-ink-faint: #8c8c8c;
 
-  /* Grid */
-  --color-rule: #9aa59e;
-  --color-rule-heavy: #17232b;
+  --color-ground: #ffffff;
+  --color-surface: #fafafa;
+  --color-surface-sunk: #f0f0f0;
 
-  /* Status — container paint, not UI-kit pastels */
-  --color-clear: #1f6b4a;
-  --color-clear-ink: #f2f6f1;
-  --color-watch: #c2761a;
-  --color-watch-ink: #fffaf0;
-  --color-hazard: #9b2f24;
-  --color-hazard-ink: #fdf2ef;
+  --color-line: #e5e5e5;
+  --color-line-strong: #111111;
 
-  --font-display: var(--font-chakra), ui-sans-serif, system-ui, sans-serif;
+  /* Risk. Muted enough to sit on white without shouting. */
+  --color-ok: #15803d;
+  --color-ok-wash: #f2faf5;
+  --color-warn: #b45309;
+  --color-warn-wash: #fdf8f0;
+  --color-bad: #b91c1c;
+  --color-bad-wash: #fdf4f3;
+
+  /*
+   * Chart series. The page is monochrome; charts are the one place colour
+   * carries identity, so these are validated rather than chosen by eye.
+   *
+   * Run from the dataviz validator against this surface (#ffffff):
+   *   5 slots on the adjacent pairlist — PASS (worst CVD ΔE 9.1,
+   *   worst normal-vision ΔE 19.6)
+   * The same five fail the all-pairs gate, which is why the carrier
+   * comparison is a grouped bar chart and not an overlaid radar: only three
+   * slots clear all-pairs, and five carriers have to be comparable.
+   *
+   * Slots are assigned by the carrier's position in the quote list and never
+   * by its rank, so re-sorting the ranking does not repaint the series.
+   */
+  --color-series-1: #2a78d6;
+  --color-series-2: #eb6834;
+  --color-series-3: #1baf7a;
+  --color-series-4: #eda100;
+  --color-series-5: #e87ba4;
+
+  /* Sequential, for magnitude. One hue, light to dark. */
+  --color-seq-200: #9ec5f4;
+  --color-seq-350: #5598e7;
+  --color-seq-450: #2a78d6;
+  --color-seq-600: #184f95;
+
+  /* Chart chrome */
+  --color-grid: #ececec;
+  --color-axis: #d4d4d4;
+
   --font-sans: var(--font-anuphan), ui-sans-serif, system-ui, sans-serif;
-  --font-mono: ui-monospace, "Cascadia Mono", monospace;
+  --font-mono: var(--font-plex-mono), ui-monospace, "Cascadia Mono", monospace;
 
-  /* Major third from 16 */
-  --text-micro: 0.75rem; /* 12 */
-  --text-small: 0.875rem; /* 14 */
+  --text-micro: 0.6875rem; /* 11 */
+  --text-small: 0.8125rem; /* 13 */
+  --text-body: 0.9375rem; /* 15 */
   --text-base: 1rem;
-  --text-lead: 1.25rem;
-  --text-figure-sm: 1.5625rem; /* 25 */
-  --text-figure: 2.4375rem; /* 39 */
-  --text-figure-lg: 3.0625rem; /* 49 */
-  --text-display: 3.8125rem; /* 61 */
+  --text-lead: 1.125rem;
+  --text-title: 1.375rem; /* 22 */
+  --text-figure-sm: 1.75rem; /* 28 */
+  --text-figure: 2.25rem; /* 36 */
+  --text-display: 3rem; /* 48 */
 }
 
 @layer base {
   html {
-    background: var(--color-deck);
-    color: var(--color-hull);
+    background: var(--color-ground);
+    color: var(--color-ink);
   }
 
   body {
     font-family: var(--font-sans);
-    /* Thai ascenders and tone marks need the extra room. */
+    font-size: var(--text-body);
+    /* Thai ascenders and tone marks need the room. */
     line-height: 1.65;
     -webkit-font-smoothing: antialiased;
+    text-rendering: optimizeLegibility;
   }
 
   h1,
   h2,
   h3,
   h4 {
-    font-family: var(--font-display);
     font-weight: 600;
-    line-height: 1.25;
-  }
-
-  /*
-   * Figures carry the angular display face, not a monospace one. Chakra Petch
-   * digits are already near-even width, and tabular-nums squares them off, so
-   * a column of rates still reads straight down without importing the
-   * terminal-printout look that made the first pass generic.
-   */
-  .fig {
-    font-family: var(--font-display);
-    font-variant-numeric: tabular-nums;
-    font-feature-settings: "tnum" 1;
+    line-height: 1.3;
     letter-spacing: -0.01em;
   }
 
-  /* A slot address, painted in the corner of a bay-plan cell. */
-  .addr {
-    font-family: var(--font-display);
+  /*
+   * Metadata labels: small, uppercase, monospace, widely tracked. The Latin
+   * is uppercased; Thai has no case, so it is tracked and sized to match
+   * rather than run through a transform that would do nothing.
+   */
+  .label {
+    font-family: var(--font-mono);
     font-size: var(--text-micro);
-    font-weight: 600;
-    letter-spacing: 0.06em;
-    opacity: 0.6;
+    letter-spacing: 0.09em;
+    text-transform: uppercase;
+    color: var(--color-ink-faint);
+    font-weight: 500;
+  }
+
+  /* Figures line up in a column so they can be read down the page. */
+  .fig {
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+    letter-spacing: -0.015em;
+  }
+
+  .mono {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+  }
+
+  /* A panel: one hairline, white, and room to breathe. */
+  .panel {
+    border: 1px solid var(--color-line);
+    background: var(--color-ground);
+  }
+
+  .divide-line > * + * {
+    border-top: 1px solid var(--color-line);
   }
 
   :focus-visible {
-    outline: 3px solid var(--color-hull);
+    outline: 2px solid var(--color-ink);
     outline-offset: 2px;
   }
 
   ::selection {
-    background: var(--color-hull);
-    color: var(--color-plan);
-  }
-
-  /*
-   * A plan is a drawn sheet: a heavy outer frame, light divisions inside.
-   * With the cells filled, this reads as a plan rather than as a card.
-   */
-  .plan {
-    border: 3px solid var(--color-rule-heavy);
-    background: var(--color-plan);
-  }
-
-  /* An ink-filled region of the same sheet, for the masthead. */
-  .plan-ink {
-    border: 3px solid var(--color-rule-heavy);
-    background: var(--color-hull);
-    color: var(--color-plan);
+    background: var(--color-ink);
+    color: var(--color-ground);
   }
 
   input,
   select,
   textarea {
-    background: var(--color-plan);
-    border: 2px solid var(--color-hull);
-    color: var(--color-hull);
-    font-family: var(--font-sans);
+    background: var(--color-ground);
+    border: 1px solid var(--color-line);
+    color: var(--color-ink);
+    font-family: inherit;
+    font-size: var(--text-small);
   }
 
   input:focus,
   select:focus,
   textarea:focus {
     outline: none;
-    box-shadow: inset 0 0 0 2px var(--color-hull);
+    border-color: var(--color-ink);
   }
 
-  /* Buttons are painted blocks too, not outlined chips. */
+  input::placeholder,
+  textarea::placeholder {
+    color: var(--color-ink-faint);
+  }
+
+  /* Solid black primary action, hairline secondary. */
+  .btn-primary {
+    background: var(--color-ink);
+    color: var(--color-ground);
+    border: 1px solid var(--color-ink);
+    font-weight: 500;
+    transition: opacity 120ms ease;
+  }
+
+  .btn-primary:hover:not(:disabled) {
+    opacity: 0.85;
+  }
+
   .btn {
-    font-family: var(--font-display);
-    font-weight: 600;
-    border: 2px solid var(--color-hull);
-    background: var(--color-plan);
-    color: var(--color-hull);
+    background: var(--color-ground);
+    color: var(--color-ink);
+    border: 1px solid var(--color-line);
+    font-weight: 500;
+    transition:
+      border-color 120ms ease,
+      background 120ms ease;
   }
 
-  .btn:hover {
-    background: var(--color-hull);
-    color: var(--color-plan);
+  .btn:hover:not(:disabled) {
+    border-color: var(--color-ink);
+    background: var(--color-surface);
   }
 
-  .btn-solid {
-    font-family: var(--font-display);
-    font-weight: 600;
-    border: 2px solid var(--color-hull);
-    background: var(--color-hull);
-    color: var(--color-plan);
-  }
-
-  .btn-solid:hover {
-    background: var(--color-plan);
-    color: var(--color-hull);
-  }
-
-  .btn-solid:disabled,
+  .btn-primary:disabled,
   .btn:disabled {
-    border-color: var(--color-rule);
-    background: var(--color-plan-sunk);
-    color: var(--color-hull-faint);
+    background: var(--color-surface-sunk);
+    border-color: var(--color-line);
+    color: var(--color-ink-faint);
     cursor: not-allowed;
+  }
+
+  /* A chip, as used for tags: hairline, monospace, small. */
+  .chip {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: 0.06em;
+    text-transform: uppercase;
+    border: 1px solid var(--color-line);
+    color: var(--color-ink-soft);
+    padding: 0.0625rem 0.375rem;
+    white-space: nowrap;
   }
 }
 
 @layer utilities {
   /*
-   * The only motion on the site: ranking rows move to their new position when
-   * the user changes a weight, so the change reads as a change.
+   * The only motion on the site: ranking rows move to their new position
+   * when a weight changes, so the change reads as a change.
    */
   .rank-row {
-    transition: transform 320ms cubic-bezier(0.2, 0, 0, 1);
+    transition: transform 280ms cubic-bezier(0.2, 0, 0, 1);
   }
 }
 
@@ -203,11 +248,8 @@
     color: #000;
   }
 
-  .plan,
-  .plan-ink {
-    border-color: #000;
-    background: #fff;
-    color: #000;
+  .panel {
+    border-color: #ccc;
   }
 
   @page {

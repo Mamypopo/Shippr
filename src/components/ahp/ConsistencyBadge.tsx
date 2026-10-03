@@ -19,17 +19,17 @@ export function ConsistencyBadge({
 }) {
   const { consistencyRatio, isConsistent, lambdaMax, consistencyIndex, inconsistencies } = result;
 
-  const ink = isConsistent ? "var(--color-clear)" : "var(--color-hazard)";
+  const ink = isConsistent ? "var(--color-ok)" : "var(--color-bad)";
 
   return (
     <section
-      className="plan"
+      className="panel"
       aria-live="polite"
       style={{ borderColor: ink }}
     >
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-ink px-4 py-2.5">
         <h3 className="text-base">ความสอดคล้องของการให้น้ำหนัก</h3>
-        <span className="addr">CR &lt; {CR_THRESHOLD.toFixed(2)} ถือว่าใช้ได้</span>
+        <span className="label">CR &lt; {CR_THRESHOLD.toFixed(2)} ถือว่าใช้ได้</span>
       </div>
 
       <div className="flex flex-wrap items-end gap-x-8 gap-y-3 px-4 py-3">
@@ -37,16 +37,16 @@ export function ConsistencyBadge({
           <p className="fig text-figure leading-none font-medium" style={{ color: ink }}>
             {consistencyRatio.toFixed(3)}
           </p>
-          <p className="mt-1 text-micro text-hull-faint">Consistency Ratio</p>
+          <p className="mt-1 text-micro text-ink-faint">Consistency Ratio</p>
         </div>
 
         <dl className="flex gap-x-6 text-small">
           <div>
-            <dt className="text-micro text-hull-faint">λmax</dt>
+            <dt className="text-micro text-ink-faint">λmax</dt>
             <dd className="fig">{lambdaMax.toFixed(4)}</dd>
           </div>
           <div>
-            <dt className="text-micro text-hull-faint">CI</dt>
+            <dt className="text-micro text-ink-faint">CI</dt>
             <dd className="fig">{consistencyIndex.toFixed(4)}</dd>
           </div>
         </dl>
@@ -59,8 +59,8 @@ export function ConsistencyBadge({
       </div>
 
       {!isConsistent && inconsistencies.length > 0 && (
-        <div className="border-t border-rule px-4 py-3">
-          <p className="text-small text-hull-soft">
+        <div className="border-t border-line px-4 py-3">
+          <p className="text-small text-ink-soft">
             ช่องที่ขัดแย้งกับคำตอบอื่นมากที่สุด
           </p>
           <ul className="mt-2 flex flex-col gap-2">
@@ -99,7 +99,7 @@ export function ConsistencyBadge({
       )}
 
       {result.warnings.length > 0 && (
-        <ul className="border-t border-rule px-4 py-2 text-micro text-watch">
+        <ul className="border-t border-line px-4 py-2 text-micro text-warn">
           {result.warnings.map((warning) => (
             <li key={warning}>{warning}</li>
           ))}

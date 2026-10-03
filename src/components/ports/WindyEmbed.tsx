@@ -23,10 +23,10 @@ export function WindyEmbed({
   const src = `https://embed.windy.com/embed2.html?lat=${lat}&lon=${lon}&zoom=${zoom}&level=surface&overlay=wind&menu=&message=&marker=&calendar=now&pressure=&type=map&location=coordinates&detail=&metricWind=kt&metricTemp=%C2%B0C&radarRange=-1`;
 
   return (
-    <section className="plan" aria-label="เรดาร์ลมและพายุ">
-      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+    <section className="panel" aria-label="เรดาร์ลมและพายุ">
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink px-4 py-2.5">
         <h2 className="text-base">ลมและพายุในเส้นทางเดินเรือ</h2>
-        <span className="addr">windy.com</span>
+        <span className="label">windy.com</span>
       </div>
 
       {loaded ? (
@@ -40,7 +40,7 @@ export function WindyEmbed({
         />
       ) : (
         <div className="flex h-[22rem] flex-col items-start justify-center gap-3 px-4">
-          <p className="max-w-[48ch] text-small text-hull-soft">
+          <p className="max-w-[48ch] text-small text-ink-soft">
             แผนที่ลมและพายุโหลดจาก windy.com เมื่อคุณกดเปิด
             เพื่อไม่ให้หน้าหลักต้องโหลดของจากภายนอกทุกครั้ง
           </p>

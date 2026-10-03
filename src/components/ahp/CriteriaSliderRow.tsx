@@ -29,8 +29,8 @@ export function CriteriaSliderRow({
 
   return (
     <div
-      className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 border-t border-rule px-4 py-3 first:border-t-0 sm:grid-cols-[minmax(0,10rem)_1fr_minmax(0,10rem)]"
-      style={isFlagged ? { background: "var(--color-watch-fill)" } : undefined}
+      className="grid grid-cols-[1fr_auto_1fr] items-center gap-x-3 gap-y-2 border-t border-line px-4 py-3 first:border-t-0 sm:grid-cols-[minmax(0,10rem)_1fr_minmax(0,10rem)]"
+      style={isFlagged ? { background: "var(--color-warn-wash)" } : undefined}
     >
       <label
         htmlFor={`pair-${left}-${right}`}
@@ -48,10 +48,10 @@ export function CriteriaSliderRow({
           step={1}
           value={slider}
           onChange={(event) => onChange(sliderToRatio(Number(event.target.value)))}
-          className="w-full accent-[var(--color-hull)]"
+          className="w-full accent-[var(--color-ink)]"
           aria-valuetext={judgmentText(left, right, value)}
         />
-        <p className="mt-1 text-center text-micro text-hull-soft">
+        <p className="mt-1 text-center text-micro text-ink-soft">
           {judgmentText(left, right, value)}
         </p>
       </div>

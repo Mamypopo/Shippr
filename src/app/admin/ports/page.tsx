@@ -24,10 +24,10 @@ export default async function AdminPortsPage() {
   const canEdit = hasRole(user, "ANALYST");
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
-      <header className="plan px-4 py-4">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
+      <header className="panel px-4 py-4">
         <h1 className="text-lead">ความแออัดของท่าเรือ</h1>
-        <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-hull-soft">
+        <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-ink-soft">
           ไม่มี API ฟรีที่เชื่อถือได้สำหรับเวลารอเทียบท่า ข้อมูลส่วนนี้จึงมาจากการกรอก
           หรือนำเข้า CSV รายสัปดาห์จากรายงานที่บริษัทใช้
         </p>
@@ -38,8 +38,8 @@ export default async function AdminPortsPage() {
       {canEdit ? (
         <PortStatusForms ports={ports} />
       ) : (
-        <section className="plan px-4 py-5">
-          <p className="text-small text-hull-soft">
+        <section className="panel px-4 py-5">
+          <p className="text-small text-ink-soft">
             {user
               ? `บัญชีของคุณมีสิทธิ์ ${user.role} จึงดูได้อย่างเดียว ต้องมีสิทธิ์ ANALYST ขึ้นไปจึงจะกรอกข้อมูลได้`
               : "ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้"}

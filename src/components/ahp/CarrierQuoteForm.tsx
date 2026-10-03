@@ -48,10 +48,10 @@ export function CarrierQuoteForm({
   onAdd: () => void;
 }) {
   return (
-    <section className="plan" aria-label="ใบเสนอราคาสายเรือ">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+    <section className="panel" aria-label="ใบเสนอราคาสายเรือ">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-ink px-4 py-2.5">
         <h3 className="text-base">ใบเสนอราคา</h3>
-        <span className="addr">{quotes.length}/5 สายเรือ</span>
+        <span className="label">{quotes.length}/5 สายเรือ</span>
       </div>
 
       <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3">
@@ -68,7 +68,7 @@ export function CarrierQuoteForm({
       </div>
 
       {quotes.length < 5 && (
-        <div className="border-t border-rule px-4 py-3">
+        <div className="border-t border-line px-4 py-3">
           <button
             type="button"
             onClick={onAdd}
@@ -98,14 +98,14 @@ function QuoteColumn({
   const cost = computeCost(quote);
 
   return (
-    <article className="border-t border-rule p-4 first:border-t-0 md:border-l md:nth-[2n+1]:border-l-0 xl:nth-[2n+1]:border-l xl:nth-[3n+1]:border-l-0">
+    <article className="border-t border-line p-4 first:border-t-0 md:border-l md:nth-[2n+1]:border-l-0 xl:nth-[2n+1]:border-l xl:nth-[3n+1]:border-l-0">
       <div className="flex items-baseline justify-between gap-2">
-        <span className="addr">สายที่ {index + 1}</span>
+        <span className="label">สายที่ {index + 1}</span>
         {canRemove && (
           <button
             type="button"
             onClick={() => onRemove(quote.id)}
-            className="text-micro text-hull-faint underline underline-offset-2 hover:text-hazard"
+            className="text-micro text-ink-faint underline underline-offset-2 hover:text-bad"
           >
             ลบ
           </button>
@@ -161,13 +161,13 @@ function QuoteColumn({
 
       {/* Making the credit visible is the point: it is why a dearer headline
           rate can still be the cheaper booking. */}
-      <p className="mt-1 border-t border-rule pt-2 text-micro text-hull-soft">
+      <p className="mt-1 border-t border-line pt-2 text-micro text-ink-soft">
         ต้นทุนรวม <span className="fig">{formatUsd(cost.grossCostUsd)}</span>
         {cost.freeTimeCreditUsd > 0 && (
           <>
             {" "}
             − free time <span className="fig">{formatUsd(cost.freeTimeCreditUsd)}</span> ={" "}
-            <span className="fig font-medium text-hull">
+            <span className="fig font-medium text-ink">
               {formatUsd(cost.effectiveCostUsd)}
             </span>
           </>
@@ -251,7 +251,7 @@ function QuoteColumn({
 function Field({ label, children }: { label: string; children: React.ReactNode }) {
   return (
     <label className="mt-3 block">
-      <span className="block text-micro text-hull-faint">{label}</span>
+      <span className="block text-micro text-ink-faint">{label}</span>
       <span className="mt-1 block">{children}</span>
     </label>
   );
@@ -259,9 +259,9 @@ function Field({ label, children }: { label: string; children: React.ReactNode }
 
 function FieldGroup({ title, children }: { title: string; children: React.ReactNode }) {
   return (
-    <fieldset className="mt-4 border-t border-rule pt-2">
+    <fieldset className="mt-4 border-t border-line pt-2">
       <legend className="sr-only">{title}</legend>
-      <p className="text-micro font-medium text-hull-soft">{title}</p>
+      <p className="text-micro font-medium text-ink-soft">{title}</p>
       <div className="mt-2 flex flex-col gap-2">{children}</div>
     </fieldset>
   );
@@ -280,7 +280,7 @@ function NumberField({
 }) {
   return (
     <label className="flex items-baseline justify-between gap-2 text-small">
-      <span className="text-hull-soft">{label}</span>
+      <span className="text-ink-soft">{label}</span>
       <span className="flex items-baseline gap-1">
         <input
           type="number"
@@ -289,7 +289,7 @@ function NumberField({
           onChange={(e) => onChange(Number(e.target.value))}
           className="fig w-24 px-2 py-1 text-right text-small"
         />
-        {suffix && <span className="w-8 text-micro text-hull-faint">{suffix}</span>}
+        {suffix && <span className="w-8 text-micro text-ink-faint">{suffix}</span>}
       </span>
     </label>
   );
@@ -306,7 +306,7 @@ function ScoreField({
 }) {
   return (
     <label className="flex items-baseline justify-between gap-2 text-small">
-      <span className="text-hull-soft">{label}</span>
+      <span className="text-ink-soft">{label}</span>
       <span className="flex items-baseline gap-2">
         <input
           type="range"
@@ -315,7 +315,7 @@ function ScoreField({
           step={1}
           value={value}
           onChange={(e) => onChange(Number(e.target.value))}
-          className="w-24 accent-[var(--color-hull)]"
+          className="w-24 accent-[var(--color-ink)]"
         />
         <span className="fig w-6 text-right">{value}</span>
       </span>

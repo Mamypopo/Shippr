@@ -44,7 +44,7 @@ export default async function DashboardPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
       <MarketSummary
         bullets={summary}
         headline={buildHeadline(series)}
@@ -115,9 +115,9 @@ function buildHeadline(series: IndexSeries[]): HeadlineFigure | null {
 /** An empty-ish corner is a place to point someone at the next useful action. */
 function DecisionPrompt() {
   return (
-    <section className="plan px-5 py-5">
+    <section className="panel px-5 py-5">
       <h2 className="text-base">มีใบเสนอราคาอยู่ในมือ</h2>
-      <p className="mt-2 max-w-[52ch] text-small leading-relaxed text-hull-soft">
+      <p className="mt-2 max-w-[52ch] text-small leading-relaxed text-ink-soft">
         เทียบ 2 ถึง 5 สายเรือด้วย AHP แล้วได้คะแนน 0 ถึง 100 พร้อมเหตุผลที่พิมพ์ส่งลูกค้าได้
         ระบบจะเทียบราคาที่กรอกกับค่าระวางตลาดให้ด้วยว่าสูงหรือต่ำกว่าตลาด
       </p>

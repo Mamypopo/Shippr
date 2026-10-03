@@ -45,10 +45,10 @@ export function PairwiseMatrix({
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="plan" aria-label="เลือกรูปแบบสินค้า">
-        <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+      <section className="panel" aria-label="เลือกรูปแบบสินค้า">
+        <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink px-4 py-2.5">
           <h3 className="text-base">รูปแบบสินค้า</h3>
-          <span className="addr">
+          <span className="label">
             {presetKey === "CUSTOM" ? "ปรับเอง" : CARGO_PRESETS[presetKey].key}
           </span>
         </div>
@@ -62,17 +62,17 @@ export function PairwiseMatrix({
                 type="button"
                 onClick={() => onApplyPreset(preset.key)}
                 aria-pressed={active}
-                className="border-t border-rule p-3 text-left first:border-t-0 sm:border-l sm:nth-[2n+1]:border-l-0 xl:border-l xl:nth-[2n+1]:border-l xl:[&:first-child]:border-l-0"
+                className="border-t border-line p-3 text-left first:border-t-0 sm:border-l sm:nth-[2n+1]:border-l-0 xl:border-l xl:nth-[2n+1]:border-l xl:[&:first-child]:border-l-0"
                 style={
                   active
-                    ? { background: "var(--color-hull)", color: "var(--color-plan)" }
+                    ? { background: "var(--color-ink)", color: "var(--color-ground)" }
                     : undefined
                 }
               >
                 <span className="block text-base">{preset.label.th}</span>
                 <span
                   className="mt-1 block text-micro leading-snug"
-                  style={{ color: active ? "var(--color-plan-sunk)" : "var(--color-hull-faint)" }}
+                  style={{ color: active ? "var(--color-surface-sunk)" : "var(--color-ink-faint)" }}
                 >
                   {preset.description.th}
                 </span>
@@ -82,10 +82,10 @@ export function PairwiseMatrix({
         </div>
       </section>
 
-      <section className="plan" aria-label="เปรียบเทียบความสำคัญของเกณฑ์">
-        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
+      <section className="panel" aria-label="เปรียบเทียบความสำคัญของเกณฑ์">
+        <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-ink px-4 py-2.5">
           <h3 className="text-base">เทียบความสำคัญทีละคู่</h3>
-          <span className="addr">Saaty 1–9 · {pairs.length} คู่</span>
+          <span className="label">Saaty 1–9 · {pairs.length} คู่</span>
         </div>
 
         {pairs.map(([left, right]) => (
@@ -110,10 +110,10 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
   const ordered = [...CRITERIA].sort((a, b) => result.weights[b] - result.weights[a]);
 
   return (
-    <section className="plan" aria-label="น้ำหนักของแต่ละเกณฑ์">
-      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+    <section className="panel" aria-label="น้ำหนักของแต่ละเกณฑ์">
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink px-4 py-2.5">
         <h3 className="text-base">น้ำหนักที่ได้</h3>
-        <span className="addr">priority vector</span>
+        <span className="label">priority vector</span>
       </div>
 
       <ul>
@@ -122,17 +122,17 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
           return (
             <li
               key={key}
-              className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-t border-rule px-4 py-2 first:border-t-0"
+              className="grid grid-cols-[1fr_auto] items-center gap-x-3 border-t border-line px-4 py-2 first:border-t-0"
             >
               <div>
                 <p className="text-small">{CRITERION_LABELS[key].th}</p>
                 <div
                   className="mt-1 h-1.5 w-full"
-                  style={{ background: "var(--color-plan-sunk)" }}
+                  style={{ background: "var(--color-surface-sunk)" }}
                 >
                   <div
                     className="h-full"
-                    style={{ width: `${weight * 100}%`, background: "var(--color-hull)" }}
+                    style={{ width: `${weight * 100}%`, background: "var(--color-ink)" }}
                   />
                 </div>
               </div>
@@ -152,23 +152,23 @@ function WeightsTable({ result }: { result: AHPResult<CriterionKey> }) {
  */
 function MatrixTable({ result }: { result: AHPResult<CriterionKey> }) {
   return (
-    <section className="plan overflow-x-auto" aria-label="เมทริกซ์เปรียบเทียบ">
-      <div className="flex items-baseline justify-between gap-4 border-b-2 border-hull px-4 py-2.5">
+    <section className="panel overflow-x-auto" aria-label="เมทริกซ์เปรียบเทียบ">
+      <div className="flex items-baseline justify-between gap-4 border-b-2 border-ink px-4 py-2.5">
         <h3 className="text-base">เมทริกซ์เปรียบเทียบ</h3>
-        <span className="addr">ครึ่งล่างคือส่วนกลับ</span>
+        <span className="label">ครึ่งล่างคือส่วนกลับ</span>
       </div>
 
       <table className="w-full border-collapse text-small">
         <thead>
           <tr>
-            <th className="border-b border-r border-rule px-2 py-1 text-left text-micro font-normal text-hull-faint">
+            <th className="border-b border-r border-line px-2 py-1 text-left text-micro font-normal text-ink-faint">
               เกณฑ์
             </th>
             {CRITERIA.map((key) => (
               <th
                 key={key}
                 scope="col"
-                className="border-b border-l border-rule px-2 py-1 text-right text-micro font-normal text-hull-faint"
+                className="border-b border-l border-line px-2 py-1 text-right text-micro font-normal text-ink-faint"
               >
                 {CRITERION_LABELS[key].th}
               </th>
@@ -180,7 +180,7 @@ function MatrixTable({ result }: { result: AHPResult<CriterionKey> }) {
             <tr key={rowKey}>
               <th
                 scope="row"
-                className="border-r border-t border-rule px-2 py-1 text-left text-micro font-normal text-hull-soft"
+                className="border-r border-t border-line px-2 py-1 text-left text-micro font-normal text-ink-soft"
               >
                 {CRITERION_LABELS[rowKey].th}
               </th>
@@ -190,10 +190,10 @@ function MatrixTable({ result }: { result: AHPResult<CriterionKey> }) {
                 return (
                   <td
                     key={colKey}
-                    className="fig border-l border-t border-rule px-2 py-1 text-right"
+                    className="fig border-l border-t border-line px-2 py-1 text-right"
                     style={{
-                      color: isLower ? "var(--color-hull-faint)" : "var(--color-hull)",
-                      background: i === j ? "var(--color-plan-sunk)" : undefined,
+                      color: isLower ? "var(--color-ink-faint)" : "var(--color-ink)",
+                      background: i === j ? "var(--color-surface-sunk)" : undefined,
                     }}
                   >
                     {formatCell(value)}

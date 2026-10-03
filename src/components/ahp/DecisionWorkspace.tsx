@@ -13,7 +13,7 @@ import { CARGO_PRESETS, type PresetKey } from "@/lib/ahp-presets";
 import { compareToMarket, ROUTE_LABELS, type BenchmarkResult } from "@/lib/benchmark";
 import { perFeuRate, quotesToAlternatives } from "@/lib/cost";
 import { CarrierQuoteForm, emptyQuote, type QuoteDraft } from "./CarrierQuoteForm";
-import { CarrierRadarChart } from "./CarrierRadarChart";
+import { CarrierCriterionChart } from "./CarrierCriterionChart";
 import { ConsistencyBadge } from "./ConsistencyBadge";
 import { PairwiseMatrix } from "./PairwiseMatrix";
 import { ScoreRanking } from "./ScoreRanking";
@@ -154,10 +154,10 @@ export function DecisionWorkspace({
 
   return (
     <div className="flex flex-col gap-4">
-      <section className="plan px-4 py-4">
+      <section className="panel px-4 py-4">
         <div className="grid grid-cols-1 gap-4 lg:grid-cols-[2fr_1fr]">
           <label className="block">
-            <span className="block text-micro text-hull-faint">ชื่อการตัดสินใจ</span>
+            <span className="block text-micro text-ink-faint">ชื่อการตัดสินใจ</span>
             <input
               type="text"
               value={title}
@@ -168,7 +168,7 @@ export function DecisionWorkspace({
           </label>
 
           <label className="block">
-            <span className="block text-micro text-hull-faint">เส้นทางสำหรับเทียบราคาตลาด</span>
+            <span className="block text-micro text-ink-faint">เส้นทางสำหรับเทียบราคาตลาด</span>
             <select
               value={routeCode}
               onChange={(e) => setRouteCode(e.target.value)}
@@ -183,7 +183,7 @@ export function DecisionWorkspace({
           </label>
         </div>
 
-        <p className="mt-3 text-micro text-hull-faint">
+        <p className="mt-3 text-micro text-ink-faint">
           {benchmark
             ? `เทียบกับ Drewry WCI ${ROUTE_LABELS[benchmark.routeCode] ?? benchmark.routeCode} ที่ $${Math.round(benchmark.value).toLocaleString("en-US")}/FEU อ่านค่าเมื่อ ${benchmark.periodDate}`
             : "ยังไม่มีค่าระวางตลาดในระบบ จะยังเทียบราคากับตลาดให้ไม่ได้"}
@@ -216,13 +216,16 @@ export function DecisionWorkspace({
             benchmarks={benchmarks}
             isConsistent={result.isConsistent}
           />
-          <CarrierRadarChart ranking={result.ranking} />
+          <CarrierCriterionChart
+            ranking={result.ranking}
+            seriesOrder={readyQuotes.map((q) => q.id)}
+          />
         </div>
       </div>
 
-      <section className="plan px-4 py-4">
+      <section className="panel px-4 py-4">
         <label className="block">
-          <span className="block text-micro text-hull-faint">
+          <span className="block text-micro text-ink-faint">
             บันทึกเหตุผลเพิ่มเติม จะปรากฏใน memo
           </span>
           <textarea
@@ -234,20 +237,20 @@ export function DecisionWorkspace({
           />
         </label>
 
-        {error && <p className="mt-3 text-small text-hazard">{error}</p>}
+        {error && <p className="mt-3 text-small text-bad">{error}</p>}
 
         <div className="mt-4 flex flex-wrap items-center gap-3">
           <button
             type="button"
             onClick={handleSave}
             disabled={!canSave}
-            className="btn-solid px-4 py-2 text-small"
+            className="btn-primary px-4 py-2 text-small"
           >
             {saving ? "กำลังบันทึก" : "บันทึกการตัดสินใจ"}
           </button>
 
           {!canSave && !saving && (
-            <p className="text-micro text-hull-faint">
+            <p className="text-micro text-ink-faint">
               ต้องตั้งชื่อ และกรอกชื่อสายเรือพร้อมค่าระวางอย่างน้อยสองสาย
             </p>
           )}

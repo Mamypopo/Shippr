@@ -25,11 +25,11 @@ export default async function DecisionsPage() {
   });
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
-      <header className="plan flex flex-wrap items-baseline justify-between gap-3 px-4 py-4">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
+      <header className="panel flex flex-wrap items-baseline justify-between gap-3 px-4 py-4">
         <div>
           <h1 className="text-lead">การตัดสินใจที่บันทึกไว้</h1>
-          <p className="mt-1 text-small text-hull-soft">
+          <p className="mt-1 text-small text-ink-soft">
             ทุกรายการเก็บเมทริกซ์ น้ำหนัก และค่าระวางตลาด ณ วันที่ตัดสินใจไว้ครบ
           </p>
         </div>
@@ -42,24 +42,24 @@ export default async function DecisionsPage() {
       </header>
 
       {decisions.length === 0 ? (
-        <section className="plan px-4 py-8">
-          <p className="max-w-[60ch] text-small leading-relaxed text-hull-soft">
+        <section className="panel px-4 py-8">
+          <p className="max-w-[60ch] text-small leading-relaxed text-ink-soft">
             ยังไม่มีการตัดสินใจที่บันทึกไว้ เมื่อเปรียบเทียบสายเรือเสร็จแล้วกดบันทึก
             รายการจะมาอยู่ที่นี่ พร้อมหน้า memo ที่พิมพ์ส่งลูกค้าได้
           </p>
         </section>
       ) : (
-        <section className="plan">
+        <section className="panel">
           <ul>
             {decisions.map((decision) => (
-              <li key={decision.id} className="border-t border-rule first:border-t-0">
+              <li key={decision.id} className="border-t border-line first:border-t-0">
                 <Link
                   href={`/decisions/${decision.id}`}
-                  className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3 hover:bg-plan-sunk"
+                  className="flex flex-wrap items-baseline justify-between gap-x-6 gap-y-1 px-4 py-3 hover:bg-surface-sunk"
                 >
                   <div className="min-w-0">
                     <p className="text-base font-medium">{decision.title}</p>
-                    <p className="mt-1 flex flex-wrap gap-x-4 text-micro text-hull-faint">
+                    <p className="mt-1 flex flex-wrap gap-x-4 text-micro text-ink-faint">
                       <span>เลือก {decision.winnerCarrier || "—"}</span>
                       <span>{routeLabel(decision.routeCode)}</span>
                       <span className="fig">{decision._count.quotes} สายเรือ</span>
@@ -71,8 +71,8 @@ export default async function DecisionsPage() {
                     className="fig text-small"
                     style={{
                       color: decision.isConsistent
-                        ? "var(--color-hull-faint)"
-                        : "var(--color-hazard)",
+                        ? "var(--color-ink-faint)"
+                        : "var(--color-bad)",
                     }}
                   >
                     CR {decision.consistencyRatio.toFixed(3)}

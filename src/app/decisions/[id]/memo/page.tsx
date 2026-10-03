@@ -43,9 +43,9 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         <PrintButton />
       </div>
 
-      <header className="border-b-2 border-hull pb-4">
+      <header className="border-b-2 border-ink pb-4">
         <h1 className="text-figure-sm leading-tight font-medium">{decision.title}</h1>
-        <p className="mt-2 flex flex-wrap gap-x-5 text-small text-hull-soft">
+        <p className="mt-2 flex flex-wrap gap-x-5 text-small text-ink-soft">
           <span>บันทึกเมื่อ {thaiFullDate(decision.createdAt)}</span>
           <span>เส้นทาง {routeLabel(decision.routeCode)}</span>
           <span className="fig">รหัส {id.slice(0, 8)}</span>
@@ -68,13 +68,13 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         </p>
 
         {decision.isConsistent ? (
-          <p className="mt-3 max-w-[68ch] text-small leading-relaxed text-hull-soft">
+          <p className="mt-3 max-w-[68ch] text-small leading-relaxed text-ink-soft">
             การให้น้ำหนักเกณฑ์ในรายการนี้มีค่า Consistency Ratio{" "}
             <span className="fig">{decision.consistencyRatio.toFixed(3)}</span> ซึ่งต่ำกว่า
             เกณฑ์มาตรฐาน 0.1 หมายความว่าการตัดสินใจทั้งชุดสอดคล้องกันเอง ใช้อ้างอิงได้
           </p>
         ) : (
-          <p className="mt-3 max-w-[68ch] text-small leading-relaxed text-hazard">
+          <p className="mt-3 max-w-[68ch] text-small leading-relaxed text-bad">
             ข้อควรระวัง: Consistency Ratio ของรายการนี้คือ{" "}
             <span className="fig">{decision.consistencyRatio.toFixed(3)}</span> ซึ่งเกิน 0.1
             การให้น้ำหนักยังขัดแย้งกันเอง ควรทบทวนก่อนใช้เอกสารนี้ประกอบการตัดสินใจ
@@ -86,12 +86,12 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         <h2 className="text-base">อันดับและคะแนน</h2>
         <table className="mt-2 w-full border-collapse text-small">
           <thead>
-            <tr className="text-micro text-hull-faint">
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-left">อันดับ</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-left">สายเรือ</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">คะแนน</th>
+            <tr className="text-micro text-ink-faint">
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-left">อันดับ</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-left">สายเรือ</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">คะแนน</th>
               {CRITERIA.map((key) => (
-                <th key={key} scope="col" className="border-y border-rule px-2 py-1.5 text-right">
+                <th key={key} scope="col" className="border-y border-line px-2 py-1.5 text-right">
                   {CRITERION_LABELS[key].th}
                 </th>
               ))}
@@ -100,13 +100,13 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
           <tbody>
             {ranking.map((entry) => (
               <tr key={entry.id}>
-                <td className="fig border-b border-rule px-2 py-1.5">{entry.rank}</td>
-                <td className="border-b border-rule px-2 py-1.5">{entry.label}</td>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right font-medium">
+                <td className="fig border-b border-line px-2 py-1.5">{entry.rank}</td>
+                <td className="border-b border-line px-2 py-1.5">{entry.label}</td>
+                <td className="fig border-b border-line px-2 py-1.5 text-right font-medium">
                   {entry.score100.toFixed(1)}
                 </td>
                 {CRITERIA.map((key) => (
-                  <td key={key} className="fig border-b border-rule px-2 py-1.5 text-right">
+                  <td key={key} className="fig border-b border-line px-2 py-1.5 text-right">
                     {((entry.localScores?.[key] ?? 0) * 100).toFixed(0)}
                   </td>
                 ))}
@@ -114,7 +114,7 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
             ))}
           </tbody>
         </table>
-        <p className="mt-2 text-micro text-hull-faint">
+        <p className="mt-2 text-micro text-ink-faint">
           คะแนนรายเกณฑ์เป็นค่าก่อนถ่วงน้ำหนัก 100 คือดีที่สุดในกลุ่มที่เปรียบเทียบ
         </p>
       </section>
@@ -125,17 +125,17 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
           <tbody>
             {CRITERIA.map((key) => (
               <tr key={key}>
-                <th scope="row" className="border-b border-rule px-2 py-1.5 text-left font-normal">
+                <th scope="row" className="border-b border-line px-2 py-1.5 text-left font-normal">
                   {CRITERION_LABELS[key].th}
                 </th>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {((weights[key] ?? 0) * 100).toFixed(1)}%
                 </td>
               </tr>
             ))}
           </tbody>
         </table>
-        <p className="mt-2 text-micro text-hull-faint">
+        <p className="mt-2 text-micro text-ink-faint">
           คำนวณจาก principal eigenvector ของเมทริกซ์เปรียบเทียบรายคู่ (Saaty 1–9) · λmax{" "}
           <span className="fig">{decision.lambdaMax.toFixed(4)}</span> · CI{" "}
           <span className="fig">{decision.consistencyIndex.toFixed(4)}</span>
@@ -146,35 +146,35 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         <h2 className="text-base">ใบเสนอราคา</h2>
         <table className="mt-2 w-full border-collapse text-small">
           <thead>
-            <tr className="text-micro text-hull-faint">
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-left">สายเรือ</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">Ocean</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">Local</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">Free time</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">Transit</th>
-              <th scope="col" className="border-y border-rule px-2 py-1.5 text-right">On-time</th>
+            <tr className="text-micro text-ink-faint">
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-left">สายเรือ</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">Ocean</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">Local</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">Free time</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">Transit</th>
+              <th scope="col" className="border-y border-line px-2 py-1.5 text-right">On-time</th>
             </tr>
           </thead>
           <tbody>
             {decision.quotes.map((quote) => (
               <tr key={quote.id}>
-                <th scope="row" className="border-b border-rule px-2 py-1.5 text-left font-normal">
+                <th scope="row" className="border-b border-line px-2 py-1.5 text-left font-normal">
                   {quote.carrierName}
                   {quote.serviceName && ` (${quote.serviceName})`}
                 </th>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {formatUsd(toNumber(quote.oceanFreightUsd))}
                 </td>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {formatUsd(toNumber(quote.localChargesUsd))}
                 </td>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {quote.freeTimeDays} วัน
                 </td>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {quote.transitDays} วัน
                 </td>
-                <td className="fig border-b border-rule px-2 py-1.5 text-right">
+                <td className="fig border-b border-line px-2 py-1.5 text-right">
                   {toNumber(quote.onTimePct).toFixed(0)}%
                 </td>
               </tr>
@@ -186,7 +186,7 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
       {snapshot?.marketUsdPerFeu && (
         <section className="mt-6">
           <h2 className="text-base">เทียบกับค่าระวางตลาด</h2>
-          <p className="mt-2 max-w-[68ch] text-small leading-relaxed text-hull-soft">
+          <p className="mt-2 max-w-[68ch] text-small leading-relaxed text-ink-soft">
             อ้างอิง Drewry WCI {routeLabel(snapshot.routeCode)} ที่{" "}
             <span className="fig">{formatUsd(snapshot.marketUsdPerFeu)}</span>/FEU อ่านค่าเมื่อ{" "}
             {String(snapshot.marketPeriodDate ?? "").slice(0, 10)} ตัวเลขนี้ถูกบันทึกไว้ ณ
@@ -194,7 +194,7 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
           </p>
           <ul className="mt-2 text-small">
             {(snapshot.quotes ?? []).map((entry) => (
-              <li key={entry.carrierName} className="border-b border-rule py-1.5">
+              <li key={entry.carrierName} className="border-b border-line py-1.5">
                 {entry.carrierName} —{" "}
                 {entry.verdict
                   ? BENCHMARK_VERDICT_LABELS[
@@ -222,7 +222,7 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         </section>
       )}
 
-      <footer className="mt-8 border-t border-rule pt-3 text-micro text-hull-faint">
+      <footer className="mt-8 border-t border-line pt-3 text-micro text-ink-faint">
         เอกสารนี้สร้างจากระบบ Shippr วิธีคำนวณคือ Analytic Hierarchy Process
         โดยถ่วงน้ำหนักเกณฑ์จากการเปรียบเทียบรายคู่ และให้คะแนนสายเรือจากตัวเลขในใบเสนอราคาจริง
       </footer>

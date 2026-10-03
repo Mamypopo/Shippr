@@ -6,17 +6,21 @@ import { BENCHMARK_VERDICT_LABELS } from "@/lib/benchmark";
 import { formatUsd } from "@/lib/format";
 
 const VERDICT_INK: Record<string, string> = {
-  BELOW_MARKET: "var(--color-clear)",
-  AT_MARKET: "var(--color-hull-soft)",
-  ABOVE_MARKET: "var(--color-hazard)",
+  BELOW_MARKET: "var(--color-ok)",
+  AT_MARKET: "var(--color-ink-faint)",
+  ABOVE_MARKET: "var(--color-bad)",
 };
 
 /**
- * The ranking, as filled bars on the plan grid.
+ * The weighted ranking.
  *
- * Rows carry `rank-row` so they slide to their new position when a weight
+ * One measure, so one hue: a sequential blue with the leader at the darkest
+ * step and the rest a step back. Identity comes from the carrier's name on
+ * the row, so the bars do not have to carry it as well.
+ *
+ * Rows carry `rank-row` and slide to their new position when a weight
  * changes — the one piece of motion on the site, and the only place it earns
- * its keep: it shows the user what their adjustment did.
+ * its keep, because it shows the user what their adjustment did.
  */
 export function ScoreRanking({
   ranking,
@@ -29,8 +33,8 @@ export function ScoreRanking({
 }) {
   if (ranking.length === 0) {
     return (
-      <section className="plan px-4 py-6">
-        <p className="text-small text-hull-soft">
+      <section className="panel px-5 py-7">
+        <p className="text-small text-ink-soft">
           กรอกใบเสนอราคาอย่างน้อยสองสายเรือ แล้วอันดับจะคำนวณให้ทันที
         </p>
       </section>
@@ -38,59 +42,59 @@ export function ScoreRanking({
   }
 
   return (
-    <section className="plan" aria-label="อันดับสายเรือ">
-      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b-2 border-hull px-4 py-2.5">
-        <h3 className="text-base">อันดับสายเรือ</h3>
-        <span className="addr">คะแนน 0–100 เทียบกับอันดับหนึ่ง</span>
+    <section className="panel" aria-label="อันดับสายเรือ">
+      <div className="flex flex-wrap items-baseline justify-between gap-x-4 gap-y-1 border-b border-line px-5 py-3">
+        <h3 className="text-small font-medium">อันดับสายเรือ</h3>
+        <span className="label">คะแนน 0–100</span>
       </div>
 
       {!isConsistent && (
-        <p className="border-b-2 border-hull px-4 py-2.5 text-micro text-hazard">
-          อันดับนี้คำนวณจากน้ำหนักที่ยังขัดแย้งกันเอง (CR เกิน 0.1) —
-          ปรับความสอดคล้องก่อนนำไปใช้อ้างอิง
+        <p
+          className="border-b border-line px-5 py-2.5 text-micro leading-snug"
+          style={{ color: "var(--color-bad)" }}
+        >
+          อันดับนี้คำนวณจากน้ำหนักที่ยังขัดแย้งกันเอง ปรับความสอดคล้องก่อนนำไปใช้อ้างอิง
         </p>
       )}
 
-      <ol>
+      <ol className="divide-line">
         {ranking.map((entry) => {
           const benchmark = benchmarks?.[entry.id];
+          const isLeader = entry.rank === 1;
 
           return (
-            <li
-              key={entry.id}
-              className="rank-row border-t border-rule px-4 py-3 first:border-t-0"
-            >
+            <li key={entry.id} className="rank-row px-5 py-4">
               <div className="flex items-baseline justify-between gap-3">
-                <h4 className="text-base font-medium">
-                  <span className="fig mr-2 text-hull-faint">{entry.rank}</span>
+                <h4 className="text-body font-medium">
+                  <span className="fig mr-2.5 text-ink-faint">{entry.rank}</span>
                   {entry.label}
                 </h4>
-                <span className="fig text-figure-sm leading-none font-medium">
+                <span className="fig text-figure-sm leading-none font-semibold">
                   {entry.score100.toFixed(1)}
                 </span>
               </div>
 
               <div
-                className="mt-2 h-2 w-full"
-                style={{ background: "var(--color-plan-sunk)" }}
+                className="mt-2.5 h-2.5 w-full bg-surface-sunk"
                 role="img"
                 aria-label={`คะแนน ${entry.score100.toFixed(1)} จาก 100`}
               >
                 <div
-                  className="h-full"
+                  className="h-full rounded-r-sm"
                   style={{
-                    width: `${Math.max(1, entry.score100)}%`,
-                    background:
-                      entry.rank === 1 ? "var(--color-clear)" : "var(--color-hull-faint)",
+                    width: `${Math.max(1.5, entry.score100)}%`,
+                    background: isLeader ? "var(--color-seq-600)" : "var(--color-seq-350)",
                   }}
                 />
               </div>
 
-              <dl className="mt-2 flex flex-wrap gap-x-5 gap-y-1 text-micro text-hull-faint">
+              {/* The per-criterion figures double as the table view that the
+                  contrast relief rule asks for — nothing is gated on colour. */}
+              <dl className="mt-2.5 flex flex-wrap gap-x-5 gap-y-1 text-micro text-ink-faint">
                 {(Object.keys(entry.localScores) as CriterionKey[]).map((key) => (
-                  <div key={key} className="flex gap-1">
+                  <div key={key} className="flex gap-1.5">
                     <dt>{CRITERION_LABELS[key].th}</dt>
-                    <dd className="fig text-hull-soft">
+                    <dd className="fig text-ink-soft">
                       {(entry.localScores[key] * 100).toFixed(0)}
                     </dd>
                   </div>
@@ -99,8 +103,8 @@ export function ScoreRanking({
 
               {benchmark && (
                 <p className="mt-2 text-micro" style={{ color: VERDICT_INK[benchmark.verdict] }}>
-                  {BENCHMARK_VERDICT_LABELS[benchmark.verdict].th} {formatUsd(Math.abs(benchmark.deltaUsd))}{" "}
-                  ({benchmark.deltaPct > 0 ? "+" : ""}
+                  {BENCHMARK_VERDICT_LABELS[benchmark.verdict].th}{" "}
+                  {formatUsd(Math.abs(benchmark.deltaUsd))} ({benchmark.deltaPct > 0 ? "+" : ""}
                   {benchmark.deltaPct.toFixed(1)}%) เทียบค่าระวางตลาด{" "}
                   {formatUsd(benchmark.marketUsd)}/FEU
                 </p>

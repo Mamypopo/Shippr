@@ -26,10 +26,10 @@ export default async function NewDecisionPage() {
   const availableRoutes = [...new Set([...withData, ...Object.values(ROUTE_CODES)])];
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
-      <header className="plan px-4 py-4">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
+      <header className="panel px-4 py-4">
         <h1 className="text-lead">เปรียบเทียบสายเรือด้วย AHP</h1>
-        <p className="mt-2 max-w-[70ch] text-small leading-relaxed text-hull-soft">
+        <p className="mt-2 max-w-[70ch] text-small leading-relaxed text-ink-soft">
           กรอกใบเสนอราคา 2–5 สาย แล้วบอกระบบว่าเกณฑ์ไหนสำคัญกว่ากันทีละคู่
           อันดับจะขยับตามทันทีที่คุณเลื่อน และระบบจะเตือนถ้าคำตอบขัดแย้งกันเอง
         </p>

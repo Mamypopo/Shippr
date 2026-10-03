@@ -2,121 +2,116 @@
 
 ## Brief
 
-A market intelligence and carrier-decision desk for Thai freight forwarders and
-logistics coordinators. Read several times a day, at a desk, usually in a hurry.
-It has three jobs, in this order:
+A market intelligence and carrier-decision desk for Thai freight forwarders
+and logistics coordinators. Read several times a day, at a desk, usually in a
+hurry. Three jobs, in this order:
 
 1. Did the market move against me this week?
 2. What is blocked right now?
 3. Can I justify this carrier choice to a client?
 
-Chosen direction: **stowage plan**. UI copy in Thai; industry terms
-(WCI, SCFI, FEU, transit time, CR) stay in English, because that is what the
-desk actually says out loud.
+UI copy in Thai; industry terms (WCI, SCFI, FEU, transit time, CR) stay in
+English, because that is what the desk says out loud.
 
-## The device
+**The client pinned the visual direction with references: minimal.** White
+ground, near-black text, 1px hairline panels, generous whitespace, small
+uppercase monospace labels for metadata, solid black calls to action. The
+brief's own direction wins over any house preference, so this is followed
+exactly.
 
-A container bay plan: a grid of addressed slots, each filled according to what
-is in it. It is an engineering document, not a presentation — hairline rules, no
-rounded corners, tiny edge addressing, and colour used strictly as a code.
+## The organising rule
 
-That gives the page its organising rule:
+> The interface is monochrome. Colour appears in exactly two places: risk
+> state, and inside charts.
 
-> The page is one continuous ruled grid, and colour means risk. Nothing else
-> is coloured.
-
-Status colour is the only chroma on the page. Links, buttons and headings are
-ink. This is both true to the source document and the discipline that keeps a
-dense screen readable: if a cell is coloured, something needs attention.
+On a page this quiet a single coloured mark carries real weight, which is the
+whole reason to keep everything else in ink. It also means the charts read as
+charts rather than as decoration.
 
 ## Tokens
 
 ### Colour
 
-| Token      | Hex       | Role                                                  |
-| ---------- | --------- | ----------------------------------------------------- |
-| `--hull`   | `#17232B` | Primary ink. A real blue-green, not a tinted black.   |
-| `--deck`   | `#C9CFC8` | Page ground — concrete apron, dark enough that a painted block reads as a block. |
-| `--plan`   | `#FAFAF7` | The drawn sheet.                                      |
-| `--clear`  | `#1F6B4A` | Low risk — solid fill, light ink on top.              |
-| `--watch`  | `#C2761A` | Moderate — container-paint ochre.                     |
-| `--hazard` | `#9B2F24` | High risk — IMDG red oxide.                           |
+| Token            | Hex       | Role                               |
+| ---------------- | --------- | ---------------------------------- |
+| `--ink`          | `#111111` | Primary text                       |
+| `--ink-soft`     | `#565656` | Secondary text                     |
+| `--ink-faint`    | `#8C8C8C` | Labels, metadata                   |
+| `--ground`       | `#FFFFFF` | Page and panel                     |
+| `--surface`      | `#FAFAFA` | Hover, subtle fill                 |
+| `--line`         | `#E5E5E5` | Hairline panel borders             |
+| `--ok`           | `#15803D` | Low risk, below market             |
+| `--warn`         | `#B45309` | Moderate risk, rate rising         |
+| `--bad`          | `#B91C1C` | High risk, stale data, above market|
 
-Status colours are used as **solid fills**, not tints. A bay plan is read as a
-shape before a single figure is read, and whisper-tinted cells cannot do that.
+### Chart series — validated, not chosen by eye
 
-Deliberately not: cream + serif + terracotta (`#D97757` and neighbours), and
-not near-black with one acid accent — there are three signal colours here and
-they are assigned by data, not by taste.
+Charts are the one place identity is carried by hue, so the palette was run
+through the dataviz validator against this exact surface (`#ffffff`) rather
+than eyeballed:
+
+| Slot | Hex       | | Slot | Hex       |
+| ---- | --------- |-| ---- | --------- |
+| 1    | `#2A78D6` | | 4    | `#EDA100` |
+| 2    | `#EB6834` | | 5    | `#E87BA4` |
+| 3    | `#1BAF7A` | |      |           |
+
+Five slots **pass** the adjacent-pair gate that grouped bars are judged on
+(worst CVD ΔE 9.1, worst normal-vision ΔE 19.6). The same five **fail** the
+all-pairs gate that an overlay needs — only three slots clear it. That result
+decided the form: see the log entry below.
+
+Sequential blue (`#9EC5F4` → `#184F95`) carries magnitude wherever one measure
+is plotted — the ranking bars and the sparklines.
+
+Three slots sit under 3:1 against white, so the contrast relief rule applies:
+every chart ships visible value labels and the per-criterion figures beneath
+the ranking act as its table view. Nothing is gated behind colour.
 
 ### Type
 
-- **Chakra Petch** — every heading and figure. Angular and squared off, the
-  vernacular of stencilled markings on container doors and port machinery.
-- **Anuphan** — prose. A calm geometric Thai sans.
+- **Anuphan** — all prose, headings and figures. A neutral Thai grotesque.
+- **IBM Plex Mono** — small uppercase metadata labels and aligned figures only.
 
-Both are Thai-first families. Neither is the Plex-plus-monospace pairing that
-makes technical pages interchangeable.
-
-Figures use `tabular-nums` on Chakra Petch rather than a monospace face, so a
-column of rates still reads straight down without importing the
-terminal-printout look.
-
-Scale, major third from 16: 12 / 14 / 16 / 20 / 25 / 39 / 49 / 61.
+Scale: 11 / 13 / 15 / 16 / 18 / 22 / 28 / 36 / 48.
 Thai body gets extra line-height for its ascenders.
-
-No all-caps labels. No eyebrow text above headings.
-
-### Layout
-
-One grid, full width, sections as regions inside it rather than floating cards.
-
-```
-┌───────────────────────────────────────────────────────────────┐
-│ Shippr                                    สถานะข้อมูล  บัญชี  │ 2px rule under
-├───────────────────────────────────────────────────────────────┤
-│ ตลาดสัปดาห์นี้                                                 │
-│  ── WCI composite ขึ้น 4.2% มาที่ $2,448/FEU                   │ ruled rows,
-│  ── Shanghai รอเทียบท่า 4.6 วัน — แออัดหนัก                    │ not bullets
-├──────────────┬──────────────┬──────────────┬──────────────────┤
-│ WCI          │ SCFI         │ BDI          │ BDRY             │ one band,
-│ 2,448        │ 1,392        │ 1,845        │ 9.84             │ hairline
-│ ▲ 4.2%  ▁▂▅▇ │ ▼ 1.1%  ▇▅▃▂ │ ▲ 0.6%  ▃▄▅▆ │ ▲ 2.0%  ▂▃▅▆     │ dividers
-├──────┬───────┴───┬──────────┴──┬───────────┴──┬───────┬───────┤
-│THLCH │ CNSHA     │ CNNGB       │ SGSIN        │ NLRTM │ USLAX │ bay-plan
-│ 1.8  │ 4.6       │ 2.9         │ 1.1          │ 3.4   │ 5.2   │ cells,
-│      │███████████│▓▓▓▓▓▓▓▓▓▓▓▓▓│              │▓▓▓▓▓▓▓│███████│ filled
-└──────┴───────────┴─────────────┴──────────────┴───────┴───────┘
-```
-
-Left-aligned throughout; figures right-aligned within their column so they can
-be read down. Edge addressing (UN/LOCODE, week-ending date) sits in the cell
-corner the way a slot address does.
-
-The AHP matrix is the memorable element and gets the boldness budget: a real
-upper-triangle matrix, editable in place, with the reciprocal half rendered
-greyed so the user sees the whole thing.
 
 ### Motion
 
-One moment only: when the ranking reorders under a slider change, rows move to
-their new positions. It answers the user's action and shows what changed.
-No scroll reveals, no hover lifts. `prefers-reduced-motion` turns it off.
-
-## Self-critique before building
-
-- Hairline rules and zero radius overlap with the broadsheet cliché. The
-  separation is that this grid is **addressed and filled** — edge codes, square
-  cells, colour-coded status — where a broadsheet is justified prose in columns.
-  Keeping the outer rule at 2px against 1px inner rules reinforces that it is a
-  plan, not a page of newsprint.
-- Mono type risks reading as the usual "monospace for small data labels" tell.
-  Mitigation: mono only where alignment or code-ness is functional — figures,
-  locodes, matrix cells — never as decoration on a heading.
-- Numbered markers appear only on the AHP wizard, which genuinely is a
-  sequence.
+One moment only: ranking rows move to their new position when a weight
+changes. It answers the user's action and shows what changed. No scroll
+reveals, no hover lifts. `prefers-reduced-motion` turns it off.
 
 ## Log
+
+- 2026-10-03 — **third pass. Misread the client twice; this one follows the
+  references they gave.** When they said the UI resembled a well-known skills
+  directory, that was the target, not the complaint — and the second pass had
+  pushed in the opposite direction, into saturated industrial blocks. The
+  direction is now pinned by their own references and followed exactly:
+  white, hairline panels, whitespace, monospace metadata labels, black CTAs.
+
+- 2026-10-03 — **charts, after the client granted colour and asked for best
+  practice.** Ran the palette through the validator instead of choosing by
+  eye, and the numbers changed the design:
+
+  The carrier radar chart from the original brief was **replaced with grouped
+  bars**. Two reasons, in order of weight. First, five overlapping series
+  cannot be told apart safely: five slots clear the adjacent-pair gate that
+  grouped bars are judged on, but only three clear the all-pairs gate an
+  overlay needs, so a radar would have capped the tool at three carriers when
+  the brief asks for five. Second, a radar asks the reader to compare polygon
+  areas — the least accurate comparison there is — and its shape changes with
+  the arbitrary order of the axes. Length against a shared baseline is read
+  accurately.
+
+  Series colour is bound to the carrier's position in the quote list, never to
+  its rank, so re-sorting the ranking does not repaint the series.
+
+  Recharts was removed with the radar; every chart here is hand-rolled SVG or
+  CSS, which keeps the dashboard's critical path free of a chart library and
+  means the charts print.
+
 
 - 2026-10-03 — first pass. Direction and language confirmed with the client
   before building.

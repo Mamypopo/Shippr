@@ -67,16 +67,16 @@ export function ManualIndexForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="plan px-4 py-4">
+    <form onSubmit={handleSubmit} className="panel px-4 py-4">
       <h2 className="text-base">กรอกค่าดัชนีสัปดาห์นี้</h2>
-      <p className="mt-1 max-w-[62ch] text-micro leading-relaxed text-hull-faint">
+      <p className="mt-1 max-w-[62ch] text-micro leading-relaxed text-ink-faint">
         Drewry แสดง WCI เป็นกราฟ ไม่มีตารางให้ดึงอัตโนมัติ ช่องนี้จึงเป็นทางหลักของดัชนีนั้น
         ไม่ใช่ทางสำรอง ค่าที่กรอกที่นี่จะไม่ถูก job อัตโนมัติเขียนทับ
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <label className="block">
-          <span className="block text-micro text-hull-faint">ดัชนี</span>
+          <span className="block text-micro text-ink-faint">ดัชนี</span>
           <select
             value={indexCode}
             onChange={(e) => setIndexCode(e.target.value)}
@@ -91,7 +91,7 @@ export function ManualIndexForm() {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">เส้นทาง</span>
+          <span className="block text-micro text-ink-faint">เส้นทาง</span>
           <select
             value={routeCode}
             onChange={(e) => setRouteCode(e.target.value)}
@@ -106,7 +106,7 @@ export function ManualIndexForm() {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">งวดวันที่</span>
+          <span className="block text-micro text-ink-faint">งวดวันที่</span>
           <input
             type="date"
             value={periodDate}
@@ -117,7 +117,7 @@ export function ManualIndexForm() {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">
+          <span className="block text-micro text-ink-faint">
             ค่า ({INDEX_UNITS[indexCode].label})
           </span>
           <input
@@ -136,7 +136,7 @@ export function ManualIndexForm() {
         <button
           type="submit"
           disabled={saving || value === ""}
-          className="btn-solid px-4 py-1.5 text-small"
+          className="btn-primary px-4 py-1.5 text-small"
         >
           {saving ? "กำลังบันทึก" : "บันทึกค่า"}
         </button>
@@ -145,7 +145,7 @@ export function ManualIndexForm() {
           <p
             className="text-small"
             style={{
-              color: status.kind === "ok" ? "var(--color-clear)" : "var(--color-hazard)",
+              color: status.kind === "ok" ? "var(--color-ok)" : "var(--color-bad)",
             }}
           >
             {status.text}

@@ -33,10 +33,10 @@ export default async function AdminIndicesPage() {
   const canEdit = hasRole(user, "ANALYST");
 
   return (
-    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
-      <header className="plan px-4 py-4">
+    <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
+      <header className="panel px-4 py-4">
         <h1 className="text-lead">กรอกข้อมูลตลาด</h1>
-        <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-hull-soft">
+        <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-ink-soft">
           ดูสถานะการดึงข้อมูลอัตโนมัติ และกรอกค่าดัชนีที่ดึงเองไม่ได้
         </p>
       </header>
@@ -46,8 +46,8 @@ export default async function AdminIndicesPage() {
       {canEdit ? (
         <ManualIndexForm />
       ) : (
-        <section className="plan px-4 py-5">
-          <p className="text-small text-hull-soft">
+        <section className="panel px-4 py-5">
+          <p className="text-small text-ink-soft">
             {user
               ? `บัญชีของคุณมีสิทธิ์ ${user.role} จึงดูได้อย่างเดียว ต้องมีสิทธิ์ ANALYST ขึ้นไปจึงจะกรอกข้อมูลได้`
               : "ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้"}
@@ -63,38 +63,38 @@ export default async function AdminIndicesPage() {
         </section>
       )}
 
-      <section className="plan overflow-x-auto">
-        <div className="border-b-2 border-hull px-4 py-2.5">
+      <section className="panel overflow-x-auto">
+        <div className="border-b-2 border-ink px-4 py-2.5">
           <h2 className="text-base">ค่าที่บันทึกล่าสุด</h2>
         </div>
 
         {recent.length === 0 ? (
-          <p className="px-4 py-6 text-small text-hull-soft">ยังไม่มีข้อมูลในระบบ</p>
+          <p className="px-4 py-6 text-small text-ink-soft">ยังไม่มีข้อมูลในระบบ</p>
         ) : (
           <table className="w-full border-collapse text-small">
             <thead>
-              <tr className="text-micro text-hull-faint">
-                <th scope="col" className="border-b border-rule px-3 py-2 text-left">งวด</th>
-                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">ดัชนี</th>
-                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">เส้นทาง</th>
-                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-right">ค่า</th>
-                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">ที่มา</th>
+              <tr className="text-micro text-ink-faint">
+                <th scope="col" className="border-b border-line px-3 py-2 text-left">งวด</th>
+                <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">ดัชนี</th>
+                <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">เส้นทาง</th>
+                <th scope="col" className="border-b border-l border-line px-3 py-2 text-right">ค่า</th>
+                <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">ที่มา</th>
               </tr>
             </thead>
             <tbody>
               {recent.map((row) => (
                 <tr key={row.id}>
-                  <td className="fig border-t border-rule px-3 py-2">
+                  <td className="fig border-t border-line px-3 py-2">
                     {thaiShortDate(row.periodDate)}
                   </td>
-                  <td className="border-l border-t border-rule px-3 py-2">{row.indexCode}</td>
-                  <td className="border-l border-t border-rule px-3 py-2">
+                  <td className="border-l border-t border-line px-3 py-2">{row.indexCode}</td>
+                  <td className="border-l border-t border-line px-3 py-2">
                     {routeLabel(row.routeCode)}
                   </td>
-                  <td className="fig border-l border-t border-rule px-3 py-2 text-right">
+                  <td className="fig border-l border-t border-line px-3 py-2 text-right">
                     {formatIndexValue(toNumber(row.value), row.unit)}
                   </td>
-                  <td className="border-l border-t border-rule px-3 py-2 text-micro text-hull-faint">
+                  <td className="border-l border-t border-line px-3 py-2 text-micro text-ink-faint">
                     {SOURCE_LABELS[row.source] ?? row.source}
                   </td>
                 </tr>
@@ -124,8 +124,8 @@ function IngestionStatus({
   runs: Record<string, { status: string; startedAt: Date; rowsWritten: number } | undefined>;
 }) {
   return (
-    <section className="plan">
-      <div className="border-b-2 border-hull px-4 py-2.5">
+    <section className="panel">
+      <div className="border-b-2 border-ink px-4 py-2.5">
         <h2 className="text-base">สถานะการดึงข้อมูลอัตโนมัติ</h2>
       </div>
 
@@ -134,15 +134,15 @@ function IngestionStatus({
           const run = runs[source.key];
           const ink =
             !run || run.status === "FAILED"
-              ? "var(--color-hazard)"
+              ? "var(--color-bad)"
               : run.status === "PARTIAL"
-                ? "var(--color-watch)"
-                : "var(--color-clear)";
+                ? "var(--color-warn)"
+                : "var(--color-ok)";
 
           return (
             <article
               key={source.key}
-              className={`border-t border-rule p-3 sm:border-t-0 ${i > 0 ? "sm:border-l" : ""}`}
+              className={`border-t border-line p-3 sm:border-t-0 ${i > 0 ? "sm:border-l" : ""}`}
             >
               <p className="text-small">{source.label}</p>
               {run ? (
@@ -154,7 +154,7 @@ function IngestionStatus({
                         ? "สำเร็จบางส่วน"
                         : "ล้มเหลว"}
                   </p>
-                  <p className="mt-1 text-micro text-hull-faint">
+                  <p className="mt-1 text-micro text-ink-faint">
                     {relativeDaysTh(run.startedAt)} · เขียน{" "}
                     <span className="fig">{run.rowsWritten}</span> แถว
                   </p>

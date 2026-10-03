@@ -80,15 +80,15 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="plan px-4 py-4">
+    <form onSubmit={handleSubmit} className="panel px-4 py-4">
       <h2 className="text-base">บันทึกเวลารอเทียบท่า</h2>
-      <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-hull-faint">
+      <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-ink-faint">
         ค่าเฉลี่ย 7 วันจากรายงานที่บริษัทใช้ ระบบจะจัดระดับความเสี่ยงให้อัตโนมัติ
       </p>
 
       <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2">
         <label className="block">
-          <span className="block text-micro text-hull-faint">ท่าเรือ</span>
+          <span className="block text-micro text-ink-faint">ท่าเรือ</span>
           <select
             value={unlocode}
             onChange={(e) => setUnlocode(e.target.value)}
@@ -103,7 +103,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">วันที่สังเกต</span>
+          <span className="block text-micro text-ink-faint">วันที่สังเกต</span>
           <input
             type="date"
             value={observedOn}
@@ -114,7 +114,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">เวลารอเฉลี่ย (วัน)</span>
+          <span className="block text-micro text-ink-faint">เวลารอเฉลี่ย (วัน)</span>
           <input
             type="number"
             step="0.1"
@@ -127,7 +127,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         </label>
 
         <label className="block">
-          <span className="block text-micro text-hull-faint">จำนวนเรือที่รอ</span>
+          <span className="block text-micro text-ink-faint">จำนวนเรือที่รอ</span>
           <input
             type="number"
             min="0"
@@ -139,7 +139,7 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
       </div>
 
       <label className="mt-3 block">
-        <span className="block text-micro text-hull-faint">หมายเหตุ</span>
+        <span className="block text-micro text-ink-faint">หมายเหตุ</span>
         <input
           type="text"
           value={note}
@@ -160,14 +160,14 @@ function SingleEntryForm({ ports }: { ports: PortOption[] }) {
         <button
           type="submit"
           disabled={saving || avgWaitDays === ""}
-          className="btn-solid px-4 py-1.5 text-small"
+          className="btn-primary px-4 py-1.5 text-small"
         >
           {saving ? "กำลังบันทึก" : "บันทึก"}
         </button>
         {status && (
           <p
             className="text-small"
-            style={{ color: status.kind === "ok" ? "var(--color-clear)" : "var(--color-hazard)" }}
+            style={{ color: status.kind === "ok" ? "var(--color-ok)" : "var(--color-bad)" }}
           >
             {status.text}
           </p>
@@ -214,13 +214,13 @@ function CsvImportForm() {
   }
 
   return (
-    <form onSubmit={handleSubmit} className="plan px-4 py-4">
+    <form onSubmit={handleSubmit} className="panel px-4 py-4">
       <h2 className="text-base">นำเข้าทั้งสัปดาห์จาก CSV</h2>
-      <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-hull-faint">
+      <p className="mt-1 max-w-[56ch] text-micro leading-relaxed text-ink-faint">
         แถวที่ผิดจะถูกข้ามและรายงานทีละแถว ไม่ทำให้ทั้งไฟล์ตกไปด้วย
       </p>
 
-      <pre className="mt-3 overflow-x-auto border border-rule bg-plan-sunk p-2 text-micro">
+      <pre className="mt-3 overflow-x-auto border border-line bg-surface-sunk p-2 text-micro">
         {PORT_CSV_TEMPLATE}
       </pre>
 
@@ -235,20 +235,20 @@ function CsvImportForm() {
         <button
           type="submit"
           disabled={!file || busy}
-          className="btn-solid px-4 py-1.5 text-small"
+          className="btn-primary px-4 py-1.5 text-small"
         >
           {busy ? "กำลังนำเข้า" : "นำเข้าไฟล์"}
         </button>
-        {error && <p className="text-small text-hazard">{error}</p>}
+        {error && <p className="text-small text-bad">{error}</p>}
       </div>
 
       {result && (
         <div className="mt-3 text-small">
-          <p style={{ color: "var(--color-clear)" }}>
+          <p style={{ color: "var(--color-ok)" }}>
             นำเข้าสำเร็จ <span className="fig">{result.imported}</span> แถว
           </p>
           {result.errors.length > 0 && (
-            <ul className="mt-2 flex flex-col gap-1 text-micro text-hazard">
+            <ul className="mt-2 flex flex-col gap-1 text-micro text-bad">
               {result.errors.map((message) => (
                 <li key={message}>{message}</li>
               ))}
