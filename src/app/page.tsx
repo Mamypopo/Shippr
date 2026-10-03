@@ -3,6 +3,7 @@ import Link from "next/link";
 import { IndexBand } from "@/components/market/IndexBand";
 import { MarketSummary, type HeadlineFigure } from "@/components/market/MarketSummary";
 import { DisruptionList } from "@/components/news/DisruptionList";
+import { LiveShipMap } from "@/components/ports/LiveShipMap";
 import { PortBayPlan } from "@/components/ports/PortBayPlan";
 import { WindyEmbed } from "@/components/ports/WindyEmbed";
 import { formatDelta, formatIndexValue, indexLabel, thaiFullDate, unitSuffix } from "@/lib/format";
@@ -63,6 +64,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.35fr_1fr]">
         <DisruptionList items={news} />
         <div className="flex flex-col gap-4">
+          <LiveShipMap />
           <WindyEmbed />
           <DecisionPrompt />
         </div>
