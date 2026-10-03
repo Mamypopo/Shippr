@@ -1,0 +1,17 @@
+{
+  "$schema": "https://openapi.vercel.sh/vercel.json",
+  "crons": [
+    {
+      "path": "/api/cron/market-sentiment",
+      "schedule": "0 6 * * *"
+    },
+    {
+      "path": "/api/cron/freight-index",
+      "schedule": "0 10 * * 5"
+    },
+    {
+      "path": "/api/cron/news",
+      "schedule": "0 */4 * * *"
+    }
+  ]
+}
