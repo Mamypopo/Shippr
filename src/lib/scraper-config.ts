@@ -29,6 +29,23 @@ export interface ScrapeUrlConfig {
    * this word" pattern.
    */
   includeScripts?: boolean;
+  /**
+   * A custom extractor for structured data a single regex can't safely
+   * express — e.g. "the last element of a year-labelled array embedded in a
+   * chart plugin's JSON". When present, this runs directly against the raw
+   * HTML instead of the selectors/patterns/includeScripts pipeline.
+   *
+   * Write this as `indexOf` plus a manual scan, never as one regex with
+   * ambiguous alternation (`(?:[^x]|\\.)*` and similar) run against a whole
+   * page. That shape is classically ReDoS-prone, and it is not theoretical
+   * here — an earlier draft of the container-news extractor used exactly
+   * that pattern and took tens of seconds against this page's ~1MB of HTML
+   * where the linear-scan version takes single-digit milliseconds. The
+   * function still must return `null` rather than throw on anything
+   * unexpected; the range check in `matchIndexValue`'s caller applies to its
+   * result the same as to a regex match.
+   */
+  extract?: (html: string) => number | null;
 }
 
 export interface ScrapeTargetConfig {
@@ -82,9 +99,56 @@ export const DREWRY_WCI: ScrapeTargetConfig = {
 };
 
 /**
+ * container-news.com renders its SCFI chart with a WordPress chart plugin
+ * that embeds every series as JSON inside the page: one object per year,
+ * shaped like `"content":"[\"1234.56\",...]","label":"2026"`. The array is
+ * in chronological order, so its last element is the most recent weekly
+ * reading. Confirmed live: the 2026-series' last value matched cbonds.com's
+ * `actual_value` exactly (3662.30/3662.2965), two unrelated sources agreeing
+ * — about as strong a confirmation as a scrape ever gets without an official
+ * API. Unlike cbonds, this site's Cloudflare configuration does not block
+ * plain Node requests, tested repeatedly.
+ *
+ * `labelIdx - contentKeyIdx > 5000` guards against the extractor grabbing
+ * some unrelated earlier `"content"` field if the page ever adds another
+ * `"label":"<year>"` occurrence far from its own data row.
+ */
+export function extractContainerNewsScfi(html: string, year: string): number | null {
+  const labelNeedle = `"label":"${year}"`;
+  const labelIdx = html.indexOf(labelNeedle);
+  if (labelIdx === -1) return null;
+
+  const contentKey = '"content":"';
+  const contentKeyIdx = html.lastIndexOf(contentKey, labelIdx);
+  if (contentKeyIdx === -1 || labelIdx - contentKeyIdx > 5000) return null;
+
+  const stringStart = contentKeyIdx + contentKey.length;
+
+  // Manual scan for the closing quote, honouring backslash-escaping —
+  // linear and bounded, unlike a regex trying to express the same thing.
+  let i = stringStart;
+  while (i < html.length && html[i] !== '"') {
+    i += html[i] === "\\" ? 2 : 1;
+  }
+  if (i >= html.length) return null;
+
+  try {
+    const values: unknown = JSON.parse(html.slice(stringStart, i).replace(/\\"/g, '"'));
+    if (!Array.isArray(values) || values.length === 0) return null;
+
+    const last = values[values.length - 1];
+    const parsed = typeof last === "string" ? Number.parseFloat(last) : Number(last);
+    return Number.isFinite(parsed) ? parsed : null;
+  } catch {
+    return null;
+  }
+}
+
+/**
  * SCFI is published by the Shanghai Shipping Exchange, which blocks automated
- * clients aggressively, and the public mirror that used to carry it has
- * since changed its page.
+ * clients aggressively. container-news.com republishes it and is currently
+ * the working path — see `extractContainerNewsScfi` above for how, and the
+ * comment on cbonds.com below for a close call that turned out not to work.
  *
  * cbonds.com republishes the figure in static HTML (`"actual_value.numeric"`
  * in an embedded state object) and was confirmed reachable by curl with a
@@ -101,8 +165,14 @@ export const SCFI: ScrapeTargetConfig = {
   key: "scfi",
   label: "Shanghai Containerized Freight Index",
   urls: [
+    {
+      url: "https://container-news.com/scfi/",
+      extract: (html) => extractContainerNewsScfi(html, String(new Date().getUTCFullYear())),
+    },
+    // Kept as a fallback in case container-news ever changes its page too,
+    // and so the official source is used automatically again if it stops
+    // blocking bots.
     { url: "https://en.sse.net.cn/indices/scfinew.jsp" },
-    { url: "https://www.container-news.com/scfi/" },
   ],
   selectors: ["#indexTable", ".scfi", "table", "main"],
   patterns: [
@@ -111,7 +181,7 @@ export const SCFI: ScrapeTargetConfig = {
   ],
   range: { min: 200, max: 6_000 },
   fragility:
-    "The Shanghai Shipping Exchange blocks bots and mirrors reposition the figure without notice. Treat a successful scrape as a bonus; manual entry is the expected path for this index.",
+    "The Shanghai Shipping Exchange blocks bots outright. container-news.com is a third party republishing the figure, not the official source — watch for it changing its own chart plugin's data shape, not just SSE's page.",
 };
 
 export const SCRAPE_TARGETS: ScrapeTargetConfig[] = [DREWRY_WCI, SCFI];

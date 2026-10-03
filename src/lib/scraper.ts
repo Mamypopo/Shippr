@@ -156,15 +156,28 @@ async function scrapeSingleValue(
       continue;
     }
 
-    const text = extractSearchText(
-      html,
-      entry.selectors ?? config.selectors,
-      entry.includeScripts ?? false,
-    );
-    const value = matchIndexValue(
-      text,
-      entry.patterns ? { ...config, patterns: entry.patterns } : config,
-    );
+    let value: number | null;
+    let excerpt: string;
+
+    if (entry.extract) {
+      // Custom structured extraction (see ScrapeUrlConfig.extract). The
+      // plausible-range check still applies here exactly as it does to a
+      // regex match — a custom extractor is not a license to skip it.
+      const raw = entry.extract(html);
+      value = raw !== null && raw >= config.range.min && raw <= config.range.max ? raw : null;
+      excerpt = raw !== null ? `extracted ${raw}` : "custom extractor found no value";
+    } else {
+      const text = extractSearchText(
+        html,
+        entry.selectors ?? config.selectors,
+        entry.includeScripts ?? false,
+      );
+      value = matchIndexValue(
+        text,
+        entry.patterns ? { ...config, patterns: entry.patterns } : config,
+      );
+      excerpt = text.slice(0, 500);
+    }
 
     if (value === null) {
       errors.push(`${url} -> no pattern matched a plausible value`);
@@ -189,7 +202,7 @@ async function scrapeSingleValue(
         rawSnapshot: {
           url,
           scrapedAt: new Date().toISOString(),
-          excerpt: text.slice(0, 500),
+          excerpt,
         },
       },
     ];

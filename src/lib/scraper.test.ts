@@ -10,7 +10,7 @@ import {
   runAllAdapters,
   type SourceAdapter,
 } from "./scraper";
-import { DREWRY_WCI, SCFI } from "./scraper-config";
+import { DREWRY_WCI, extractContainerNewsScfi, SCFI } from "./scraper-config";
 
 describe("parseNumber", () => {
   it("strips thousands separators and currency marks", () => {
@@ -143,6 +143,65 @@ describe("indexWeekDate", () => {
       expect(date.getUTCDay()).toBe(4);
       expect(date.getUTCHours()).toBe(0);
     }
+  });
+});
+
+describe("container-news SCFI extractor", () => {
+  const extract = extractContainerNewsScfi;
+
+  it("is actually wired into the SCFI config as the primary source", () => {
+    expect(SCFI.urls[0].url).toContain("container-news.com");
+    expect(SCFI.urls[0].extract).toBeTypeOf("function");
+  });
+
+  /** Builds a chart-plugin-shaped row for one year, matching the real page. */
+  function rowFor(year: string, values: string[]): string {
+    const content = JSON.stringify(values).replace(/"/g, '\\"');
+    return `{"id":"183","chart_id":"46","row_index":"1","content":"${content}","label":"${year}"}`;
+  }
+
+  it("takes the last value from the current year's series", () => {
+    const html = `<script>var d=[${rowFor("2026", ["3590.05", "3662.18", "3662.30"])}]</script>`;
+    expect(extract(html, "2026")).toBe(3662.3);
+  });
+
+  it("ignores a different year's series", () => {
+    const html = `<script>var d=[${rowFor("2025", ["1114.52"])},${rowFor("2026", ["3662.30"])}]</script>`;
+    expect(extract(html, "2026")).toBe(3662.3);
+    expect(extract(html, "2025")).toBe(1114.52);
+  });
+
+  it("returns null rather than throwing when the year is absent", () => {
+    const html = `<script>var d=[${rowFor("2025", ["1114.52"])}]</script>`;
+    expect(extract(html, "2099")).toBeNull();
+  });
+
+  it("returns null on a malformed or truncated content string", () => {
+    expect(extract('"content":"[1,2,"label":"2026"', "2026")).toBeNull();
+    expect(extract('"content":"","label":"2026"', "2026")).toBeNull();
+  });
+
+  it("does not grab an unrelated content field far from the label", () => {
+    const farContent = '"content":"[\\"9999.99\\"]"';
+    const padding = "x".repeat(6000);
+    const html = `${farContent}${padding}"label":"2026"`;
+    expect(extract(html, "2026")).toBeNull();
+  });
+
+  it("stays linear-time on megabyte-scale HTML — guards against reintroducing a backtracking regex", () => {
+    // An earlier draft used `(?:[^\]]|\\.)*` across the whole page and took
+    // tens of seconds on real ~1MB input where this takes single-digit
+    // milliseconds. This pins the fast behaviour so a future "simplify this"
+    // edit can't quietly bring that back.
+    const padding = "x".repeat(1_000_000);
+    const html = `${padding}${rowFor("2026", ["3662.30"])}${padding}`;
+
+    const start = Date.now();
+    const result = extract(html, "2026");
+    const elapsed = Date.now() - start;
+
+    expect(result).toBe(3662.3);
+    expect(elapsed).toBeLessThan(200);
   });
 });
 
