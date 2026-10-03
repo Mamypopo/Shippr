@@ -8,6 +8,7 @@ const NAV = [
   { href: "/", label: "ภาพรวมตลาด" },
   { href: "/decisions", label: "การตัดสินใจ" },
   { href: "/admin/indices", label: "กรอกข้อมูล" },
+  { href: "/admin/vessels", label: "ติดตามเรือ" },
 ];
 
 export async function SiteHeader() {

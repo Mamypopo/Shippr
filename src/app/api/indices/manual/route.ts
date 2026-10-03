@@ -5,10 +5,12 @@ import { formatZodIssues, manualIndexSchema } from "@/lib/validation";
 /**
  * Hand-enter an index reading.
  *
- * Not a fallback for emergencies: Drewry publishes the WCI as a chart with no
- * table, so for that source this is the expected weekly path. Entries are
- * stamped MANUAL with the user who keyed them, and the ingestion job will not
- * overwrite a manual figure with a later scrape of the same week.
+ * All of these indices are scraped automatically now (including WCI, via its
+ * page's own meta description — see scraper-config.ts), so this is a true
+ * last resort: both the primary and fallback sources failed, or a more
+ * trustworthy figure is available from elsewhere. Entries are stamped MANUAL
+ * with the user who keyed them, and the ingestion job will not overwrite a
+ * manual figure with a later scrape of the same week.
  */
 export async function POST(request: Request): Promise<Response> {
   const auth = await requireAuth();

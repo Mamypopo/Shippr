@@ -1,0 +1,65 @@
+name: Track vessel positions
+
+# Same constraint as ingest-news.yml: Vercel's Hobby plan caps cron at once a
+# day, which is useless for "is the vessel getting close" — a position
+# that's a day old might as well not exist. GitHub Actions has no such cap,
+# so this runs every 15 minutes and hits the same authenticated endpoint.
+#
+# This job is a no-op (SUCCESS, 0 rows) whenever no vessel is currently
+# tracked, so it is safe to leave enabled even between shipments.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   APP_URL             https://your-deployment.vercel.app  (no trailing slash)
+#   CRON_SECRET         the same value set in the Vercel environment
+#   (AISSTREAM_API_KEY  lives only in the Vercel environment, never here —
+#    this workflow calls the deployed endpoint, it never talks to aisstream.io directly)
+
+on:
+  schedule:
+    - cron: "*/15 * * * *"
+  workflow_dispatch:
+
+concurrency:
+  # The endpoint's own listening window (tens of seconds) plus GitHub's
+  # scheduling jitter means a slow run could still be going when the next
+  # one fires. The route is idempotent (positions are deduped on
+  # vessel + timestamp), but there's no reason to run two at once.
+  group: track-vessels
+  cancel-in-progress: false
+
+jobs:
+  track:
+    runs-on: ubuntu-latest
+    timeout-minutes: 3
+
+    steps:
+      - name: Fetch vessel positions
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APP_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "APP_URL and CRON_SECRET must be set as repository secrets." >&2
+            exit 1
+          fi
+
+          status=$(curl --silent --show-error --fail-with-body \
+            --max-time 60 \
+            --retry 1 --retry-delay 5 --retry-all-errors \
+            --write-out '%{http_code}' \
+            --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/vessel-tracking")
+
+          echo "HTTP ${status}"
+          cat response.json
+
+          # The route answers 200 even when no vessel transmitted this round
+          # (PARTIAL) or when nothing is being tracked (SUCCESS, 0 rows); it
+          # only answers non-200 when AISSTREAM_API_KEY is missing or the
+          # connection itself failed outright.
+          if [ "${status}" != "200" ]; then
+            exit 1
+          fi

@@ -196,3 +196,48 @@ export async function getBenchmarkForRoute(
 
   return null;
 }
+
+export interface TrackedVesselView {
+  id: string;
+  mmsi: number;
+  label: string;
+  destinationPort: { name: string; lat: number | null; lon: number | null } | null;
+  latestPosition: {
+    lat: number;
+    lon: number;
+    speedKnots: number | null;
+    navStatus: string | null;
+    observedAt: Date;
+  } | null;
+}
+
+/** Active tracked vessels with their most recent known position, for the dashboard card. */
+export async function getTrackedVessels(): Promise<TrackedVesselView[]> {
+  const vessels = await prisma.trackedVessel.findMany({
+    where: { isActive: true },
+    orderBy: { createdAt: "desc" },
+    include: {
+      destinationPort: { select: { name: true, lat: true, lon: true } },
+      positions: { orderBy: { observedAt: "desc" }, take: 1 },
+    },
+  });
+
+  return vessels.map((v) => {
+    const latest = v.positions[0];
+    return {
+      id: v.id,
+      mmsi: v.mmsi,
+      label: v.label,
+      destinationPort: v.destinationPort,
+      latestPosition: latest
+        ? {
+            lat: latest.lat,
+            lon: latest.lon,
+            speedKnots: latest.speedKnots,
+            navStatus: latest.navStatus,
+            observedAt: latest.observedAt,
+          }
+        : null,
+    };
+  });
+}

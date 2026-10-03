@@ -7,6 +7,7 @@
  */
 
 import { prisma } from "./db";
+import type { VesselPositionReport } from "./ais";
 import type { ParsedNewsItem } from "./rss";
 import type { ParsedIndex } from "./scraper";
 import type { DataSource, IndexCode, IndexUnit } from "@/generated/prisma/enums";
@@ -183,6 +184,54 @@ export interface LatestRun {
    * what made "partial success, 0 rows written" look unexplained on reload.
    */
   errorMessage: string | null;
+}
+
+/**
+ * Insert AIS position reports for tracked vessels, keyed by MMSI.
+ *
+ * `mmsiToVesselId` is looked up once by the caller rather than per report,
+ * for the same reason the other upserts here were changed from per-row
+ * round trips to a single batched one: this can report positions for many
+ * vessels in one listening window, and a vessel a report doesn't match (one
+ * no longer tracked) is skipped rather than erroring the batch.
+ */
+export async function insertVesselPositions(
+  reports: VesselPositionReport[],
+  mmsiToVesselId: Map<number, string>,
+): Promise<UpsertResult> {
+  const result: UpsertResult = { written: 0, failed: 0, errors: [], skippedManual: [] };
+  if (reports.length === 0) return result;
+
+  const rows = reports.flatMap((report) => {
+    const vesselId = mmsiToVesselId.get(report.mmsi);
+    if (!vesselId) return [];
+    return [
+      {
+        vesselId,
+        observedAt: report.observedAt,
+        lat: report.lat,
+        lon: report.lon,
+        speedKnots: report.speedKnots,
+        courseDeg: report.courseDeg,
+        navStatus: report.navStatus,
+      },
+    ];
+  });
+
+  if (rows.length === 0) return result;
+
+  try {
+    // A retry hitting the exact same (vesselId, observedAt) pair again is
+    // expected, not an error — `skipDuplicates` makes that a no-op instead
+    // of a thrown unique-constraint violation.
+    const created = await prisma.vesselPosition.createMany({ data: rows, skipDuplicates: true });
+    result.written = created.count;
+  } catch (error) {
+    result.failed = rows.length;
+    result.errors.push(error instanceof Error ? error.message : String(error));
+  }
+
+  return result;
 }
 
 /**

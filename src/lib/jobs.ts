@@ -11,7 +11,9 @@
 
 import type { RunSummary } from "./cron";
 import type { DataSource } from "@/generated/prisma/enums";
-import { upsertFreightIndices, upsertNewsItems } from "./ingest";
+import { fetchVesselPositions } from "./ais";
+import { prisma } from "./db";
+import { insertVesselPositions, upsertFreightIndices, upsertNewsItems } from "./ingest";
 import { statusFor } from "./cron";
 import { fetchMarketSentiment } from "./market";
 import { fetchAllFeeds } from "./rss";
@@ -150,11 +152,64 @@ export async function runNewsJob(): Promise<RunSummary> {
   };
 }
 
+/**
+ * A short listen-and-close burst against aisstream.io for whichever vessels
+ * are currently tracked — see `ais.ts` for why this isn't a held-open
+ * connection. Running on a schedule, this answers "where was the vessel
+ * last seen," not "where is it exactly right now."
+ */
+export async function runVesselTrackingJob(): Promise<RunSummary> {
+  const apiKey = process.env.AISSTREAM_API_KEY;
+  if (!apiKey) {
+    return {
+      status: "FAILED",
+      rowsWritten: 0,
+      errorMessage: "AISSTREAM_API_KEY is not configured on this deployment.",
+    };
+  }
+
+  const vessels = await prisma.trackedVessel.findMany({
+    where: { isActive: true },
+    select: { id: true, mmsi: true },
+  });
+
+  if (vessels.length === 0) {
+    return { status: "SUCCESS", rowsWritten: 0, errorMessage: "ไม่มีเรือที่กำลังติดตามอยู่" };
+  }
+
+  const mmsiToVesselId = new Map(vessels.map((v) => [v.mmsi, v.id]));
+
+  try {
+    const reports = await fetchVesselPositions(vessels.map((v) => v.mmsi), apiKey);
+    const result = await insertVesselPositions(reports, mmsiToVesselId);
+
+    const silent = vessels.filter((v) => !reports.some((r) => r.mmsi === v.mmsi));
+    const note =
+      silent.length > 0
+        ? `ไม่มีสัญญาณจากเรือในช่วงนี้: MMSI ${silent.map((v) => v.mmsi).join(", ")} (ปกติถ้าเรืออยู่กลางทะเลไกลสถานีรับสัญญาณ)`
+        : undefined;
+
+    return {
+      status: reports.length > 0 ? "SUCCESS" : "PARTIAL",
+      rowsWritten: result.written,
+      errorMessage: [note, ...result.errors].filter(Boolean).join(" | ") || undefined,
+      detail: { tracked: vessels.length, reported: reports.length },
+    };
+  } catch (error) {
+    return {
+      status: "FAILED",
+      rowsWritten: 0,
+      errorMessage: error instanceof Error ? error.message : String(error),
+    };
+  }
+}
+
 /** Keyed registry, so a route can resolve "which job" from a URL segment. */
 export const JOBS = {
   "freight-index": { label: "ดัชนีค่าระวาง", run: runFreightIndexJob },
   "market-sentiment": { label: "BDRY / น้ำมันดิบ / ZIM / VLSFO", run: runMarketSentimentJob },
   news: { label: "ข่าว RSS", run: runNewsJob },
+  "vessel-tracking": { label: "ตำแหน่งเรือที่ติดตาม", run: runVesselTrackingJob },
 } as const;
 
 export type JobKey = keyof typeof JOBS;

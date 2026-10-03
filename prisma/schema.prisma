@@ -120,7 +120,8 @@ model Port {
   sortOrder Int     @default(100)
   isActive  Boolean @default(true)
 
-  statuses PortStatus[]
+  statuses       PortStatus[]
+  trackedVessels TrackedVessel[]
 
   @@map("port")
 }
@@ -270,16 +271,62 @@ model ScrapeRun {
   @@map("scrape_run")
 }
 
+/// A specific vessel worth watching because an actual shipment is on it, not
+/// a generic regional view (that's `LiveShipMap`). One row per vessel being
+/// tracked right now; `isActive` turns tracking off without losing the
+/// position history once a shipment has arrived.
+model TrackedVessel {
+  id                String   @id @default(cuid())
+  /// Maritime Mobile Service Identity — the number AIS position reports are
+  /// keyed by, not the vessel's name (names collide; MMSIs don't).
+  mmsi              Int      @unique
+  /// Free text, e.g. "ตู้ส่งลูกค้า ABC — PO 1234" — a worklist label, not a vessel registry entry.
+  label             String
+  destinationPortId String?
+  isActive          Boolean  @default(true)
+  enteredById       String?
+  createdAt         DateTime @default(now())
+
+  destinationPort Port?            @relation(fields: [destinationPortId], references: [id], onDelete: SetNull)
+  enteredBy       UserProfile?     @relation(fields: [enteredById], references: [id], onDelete: SetNull)
+  positions       VesselPosition[]
+
+  @@map("tracked_vessel")
+}
+
+/// One AIS position report. Kept as history, not overwritten in place, so a
+/// vessel's recent track can be shown later even though only the latest
+/// reading is used today.
+model VesselPosition {
+  id         String   @id @default(cuid())
+  vesselId   String
+  observedAt DateTime
+  lat        Float
+  lon        Float
+  speedKnots Float?
+  /// True heading in degrees, when the AIS message included one.
+  courseDeg  Float?
+  /// AIS navigational status text as reported, e.g. "Under way using engine".
+  navStatus  String?
+  createdAt  DateTime @default(now())
+
+  vessel TrackedVessel @relation(fields: [vesselId], references: [id], onDelete: Cascade)
+
+  @@unique([vesselId, observedAt])
+  @@index([vesselId, observedAt(sort: Desc)])
+  @@map("vessel_position")
+}
+
 model UserProfile {
-  id       String @id @default(cuid())
+  id           String   @id @default(cuid())
   /// Lowercase, unique. The only thing a user types to identify themselves.
-  username String @unique
+  username     String   @unique
   /// scrypt, stored as `scrypt$N$r$p$salt$hash`. See lib/password.ts.
   passwordHash String
-  fullName String?
-  orgName  String?
-  role     UserRole @default(VIEWER)
-  isActive Boolean  @default(true)
+  fullName     String?
+  orgName      String?
+  role         UserRole @default(VIEWER)
+  isActive     Boolean  @default(true)
 
   /// Brute-force throttling. Reset to zero on a successful sign-in.
   failedAttempts Int       @default(0)
@@ -294,6 +341,7 @@ model UserProfile {
   decisions      AHPDecisionLog[]
   freightEntries FreightIndex[]
   portEntries    PortStatus[]
+  trackedVessels TrackedVessel[]
 
   @@map("user_profile")
 }
@@ -304,15 +352,15 @@ model UserProfile {
 /// cannot then be replayed as a live session. Sessions are rows rather than
 /// self-signed tokens so that revoking one actually revokes it.
 model Session {
-  id        String   @id @default(cuid())
+  id         String   @id @default(cuid())
   /// SHA-256 of the token held in the cookie. Never the token itself.
-  tokenHash String   @unique
-  userId    String
-  expiresAt DateTime
-  createdAt DateTime @default(now())
+  tokenHash  String   @unique
+  userId     String
+  expiresAt  DateTime
+  createdAt  DateTime @default(now())
   /// Rolling renewal, so an active user is not signed out mid-week.
   lastSeenAt DateTime @default(now())
-  userAgent String?
+  userAgent  String?
 
   user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
 

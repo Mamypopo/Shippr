@@ -5,6 +5,7 @@ import { MarketSummary, type HeadlineFigure } from "@/components/market/MarketSu
 import { DisruptionList } from "@/components/news/DisruptionList";
 import { LiveShipMap } from "@/components/ports/LiveShipMap";
 import { PortBayPlan } from "@/components/ports/PortBayPlan";
+import { TrackedVesselsCard } from "@/components/ports/TrackedVesselsCard";
 import { WindyEmbed } from "@/components/ports/WindyEmbed";
 import { formatDelta, formatIndexValue, indexLabel, thaiFullDate, unitSuffix } from "@/lib/format";
 import { fetchUsdThbRate } from "@/lib/fx";
@@ -14,6 +15,7 @@ import {
   getPortSnapshots,
   getRecentNews,
   getTopAlert,
+  getTrackedVessels,
   type IndexSeries,
 } from "@/lib/queries";
 import { buildMarketSummary } from "@/lib/summary";
@@ -23,13 +25,14 @@ import { routeLabel } from "@/lib/benchmark";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [series, ports, news, alertCount7d, topAlert, usdThbRate] = await Promise.all([
+  const [series, ports, news, alertCount7d, topAlert, usdThbRate, trackedVessels] = await Promise.all([
     getAllIndexSeries(),
     getPortSnapshots(),
     getRecentNews(20),
     countRecentAlerts(7),
     getTopAlert(7),
     fetchUsdThbRate(),
+    getTrackedVessels(),
   ]);
 
   const summary = buildMarketSummary({
@@ -64,6 +67,7 @@ export default async function DashboardPage() {
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.35fr_1fr]">
         <DisruptionList items={news} />
         <div className="flex flex-col gap-4">
+          <TrackedVesselsCard vessels={trackedVessels} />
           <LiveShipMap />
           <WindyEmbed />
           <DecisionPrompt />

@@ -94,6 +94,16 @@ export const portStatusImportSchema = z.object({
   rows: z.array(portStatusSchema).min(1).max(500),
 });
 
+export const trackedVesselSchema = z.object({
+  // Ship station MMSIs fall in 200000000-799999999 per ITU-R M.585 (the
+  // first digit is the region code; 0/8/9-prefixed numbers are reserved for
+  // group calls, handheld VHF, and aids to navigation, not vessels). Narrower
+  // than "any 9-digit number" on purpose, to catch an obvious typo early.
+  mmsi: z.number().int().min(200_000_000).max(799_999_999),
+  label: z.string().min(1, "ใส่ชื่อ/คำอธิบายสั้นๆ ว่าติดตามไปทำไม").max(200),
+  destinationPortUnlocode: z.string().min(3).max(10).nullish(),
+});
+
 /** Flatten a ZodError into `field -> message` for form display. */
 export function formatZodIssues(error: z.ZodError): Record<string, string> {
   const out: Record<string, string> = {};
