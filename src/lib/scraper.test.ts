@@ -47,6 +47,14 @@ describe("extractSearchText", () => {
   it("collapses whitespace", () => {
     expect(extractSearchText("<body><p>a\n\n   b</p></body>", [])).toBe("a b");
   });
+
+  it("searches inside scripts when explicitly told to", () => {
+    // The opt-in path a source like cbonds needs: the value lives in an
+    // embedded state object, not in rendered body text.
+    const html = `<body><script>var state={"actual_value.numeric":3662.2965};</script></body>`;
+    const text = extractSearchText(html, [], true);
+    expect(text).toContain("3662.2965");
+  });
 });
 
 describe("matchIndexValue", () => {
@@ -71,6 +79,23 @@ describe("matchIndexValue", () => {
 
   it("falls through to a later pattern when the first does not apply", () => {
     expect(matchIndexValue("Spot rates reached $2,750 per 40ft", DREWRY_WCI)).toBe(2750);
+  });
+
+  it("matches a per-URL override pattern anchored to a named JSON key", () => {
+    // The mechanism a source like a third-party data republisher would need:
+    // the value lives in an embedded state object under a specific key, not
+    // in rendered body text. See ScrapeUrlConfig.includeScripts for why the
+    // key has to be this specific before it's safe to search inside scripts.
+    const overridePattern = /"actual_value\.numeric"\s*:\s*([\d.]+)/;
+    const text = `"actual_value":"3,662.30","actual_value.numeric":3662.2965,"actual_date":"30/09/2026"`;
+
+    expect(matchIndexValue(text, { ...SCFI, patterns: [overridePattern] })).toBe(3662.2965);
+  });
+
+  it("an anchored key pattern does not match the comma-formatted display string", () => {
+    const overridePattern = /"actual_value\.numeric"\s*:\s*([\d.]+)/;
+    const text = `"actual_value":"3,662.30"`; // no .numeric field present
+    expect(matchIndexValue(text, { ...SCFI, patterns: [overridePattern] })).toBeNull();
   });
 });
 

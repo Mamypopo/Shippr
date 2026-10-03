@@ -81,12 +81,19 @@ export function parseNumber(raw: string): number {
 /**
  * Collapse a page to searchable text, preferring the configured selectors.
  *
- * Scripts and styles are dropped first: a JSON blob or a CSS rule inside them
- * will happily match a number pattern and produce a confident wrong answer.
+ * Scripts and styles are dropped first by default: a JSON blob or a CSS rule
+ * inside them will happily match a loose number pattern and produce a
+ * confident wrong answer. `includeScripts` opts a specific URL back in, for
+ * the rare case where the target pattern is anchored to a named key rather
+ * than a loose shape — see `ScrapeUrlConfig.includeScripts`.
  */
-export function extractSearchText(html: string, selectors: string[]): string {
+export function extractSearchText(
+  html: string,
+  selectors: string[],
+  includeScripts = false,
+): string {
   const $ = cheerio.load(html);
-  $("script, style, noscript").remove();
+  if (!includeScripts) $("script, style, noscript").remove();
 
   for (const selector of selectors) {
     const text = $(selector).first().text().replace(/\s+/g, " ").trim();
@@ -138,7 +145,9 @@ async function scrapeSingleValue(
 ): Promise<ParsedIndex[]> {
   const errors: string[] = [];
 
-  for (const url of config.urls) {
+  for (const entry of config.urls) {
+    const url = entry.url;
+
     let html: string;
     try {
       html = await fetchText(url);
@@ -147,8 +156,15 @@ async function scrapeSingleValue(
       continue;
     }
 
-    const text = extractSearchText(html, config.selectors);
-    const value = matchIndexValue(text, config);
+    const text = extractSearchText(
+      html,
+      entry.selectors ?? config.selectors,
+      entry.includeScripts ?? false,
+    );
+    const value = matchIndexValue(
+      text,
+      entry.patterns ? { ...config, patterns: entry.patterns } : config,
+    );
 
     if (value === null) {
       errors.push(`${url} -> no pattern matched a plausible value`);

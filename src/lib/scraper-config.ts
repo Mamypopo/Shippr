@@ -12,18 +12,39 @@ export interface IndexRangeRule {
   max: number;
 }
 
+export interface ScrapeUrlConfig {
+  url: string;
+  /** Overrides the target's default selectors for this URL alone. */
+  selectors?: string[];
+  /** Overrides the target's default patterns for this URL alone. */
+  patterns?: RegExp[];
+  /**
+   * Search inside `<script>` tags too, instead of stripping them first.
+   *
+   * The default strips scripts because a loose pattern can match an
+   * unrelated number inside a JSON blob or an analytics snippet and produce
+   * a confident wrong answer. This is only safe to turn on when the pattern
+   * for this URL is anchored to a specific, unlikely-to-collide key — e.g.
+   * a named field in an embedded state object — not a loose "4 digits near
+   * this word" pattern.
+   */
+  includeScripts?: boolean;
+}
+
 export interface ScrapeTargetConfig {
   key: string;
   label: string;
-  urls: string[];
+  urls: ScrapeUrlConfig[];
   /**
    * CSS selectors tried in order to narrow the page before the text patterns
-   * run. An empty list means the patterns run against the whole body text.
+   * run, used for any URL that doesn't override them. An empty list means
+   * the patterns run against the whole body text.
    */
   selectors: string[];
   /**
-   * Regular expressions with one capture group holding the number. Tried in
-   * order; the first that matches and validates wins.
+   * Regular expressions with one capture group holding the number, used for
+   * any URL that doesn't override them. Tried in order; the first that
+   * matches and validates wins.
    */
   patterns: RegExp[];
   range: IndexRangeRule;
@@ -41,7 +62,9 @@ export const DREWRY_WCI: ScrapeTargetConfig = {
   key: "drewry-wci",
   label: "Drewry World Container Index",
   urls: [
-    "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    {
+      url: "https://www.drewry.co.uk/supply-chain-advisors/supply-chain-expertise/world-container-index-assessed-by-drewry",
+    },
   ],
   selectors: [".wci-composite", "#wci", ".chart-summary", "main"],
   patterns: [
@@ -60,14 +83,26 @@ export const DREWRY_WCI: ScrapeTargetConfig = {
 
 /**
  * SCFI is published by the Shanghai Shipping Exchange, which blocks automated
- * clients aggressively. Mirror sites carry the figure but move it around.
+ * clients aggressively, and the public mirror that used to carry it has
+ * since changed its page.
+ *
+ * cbonds.com republishes the figure in static HTML (`"actual_value.numeric"`
+ * in an embedded state object) and was confirmed reachable by curl with a
+ * browser User-Agent — but it sits behind Cloudflare, and both axios and
+ * Node's native `fetch` (undici) get an immediate 403 from it in this
+ * environment while curl succeeds with identical headers. That is a TLS/JA3
+ * fingerprint check, not a header check, so it isn't fixable from inside
+ * Node without a real browser engine — which this project deliberately
+ * avoids (no Playwright/Puppeteer, to stay light enough for a Vercel
+ * function). Recorded here so this isn't rediscovered the hard way: cbonds
+ * is not a usable source for this runtime, despite looking like one.
  */
 export const SCFI: ScrapeTargetConfig = {
   key: "scfi",
   label: "Shanghai Containerized Freight Index",
   urls: [
-    "https://en.sse.net.cn/indices/scfinew.jsp",
-    "https://www.container-news.com/scfi/",
+    { url: "https://en.sse.net.cn/indices/scfinew.jsp" },
+    { url: "https://www.container-news.com/scfi/" },
   ],
   selectors: ["#indexTable", ".scfi", "table", "main"],
   patterns: [
@@ -76,7 +111,7 @@ export const SCFI: ScrapeTargetConfig = {
   ],
   range: { min: 200, max: 6_000 },
   fragility:
-    "The Shanghai Shipping Exchange blocks bots and mirrors reposition the figure without notice. Treat a successful scrape as a bonus.",
+    "The Shanghai Shipping Exchange blocks bots and mirrors reposition the figure without notice. Treat a successful scrape as a bonus; manual entry is the expected path for this index.",
 };
 
 export const SCRAPE_TARGETS: ScrapeTargetConfig[] = [DREWRY_WCI, SCFI];
