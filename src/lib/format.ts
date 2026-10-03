@@ -49,8 +49,9 @@ export function relativeDaysTh(date: Date, now = new Date()): string {
 export const INDEX_LABELS: Record<string, string> = {
   WCI: "Drewry WCI",
   SCFI: "SCFI",
-  BDI: "Baltic Dry Index",
   BDRY: "BDRY ETF",
+  WTI: "WTI Crude Oil",
+  BRENT: "Brent Crude Oil",
 };
 
 export function indexLabel(code: string): string {

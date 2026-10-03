@@ -33,32 +33,52 @@ export interface UpsertResult {
  * week: if someone took the trouble to key in the real number, a scraper
  * result for that slot is the less trustworthy of the two.
  */
+/** `indexCode|routeCode|periodDate` — stable key for matching rows to the bulk MANUAL check. */
+function freightIndexKey(row: { indexCode: string; routeCode: string; periodDate: Date }): string {
+  return `${row.indexCode}|${row.routeCode}|${row.periodDate.getTime()}`;
+}
+
 export async function upsertFreightIndices(
   rows: ParsedIndex[],
   source: DataSource,
 ): Promise<UpsertResult> {
   const result: UpsertResult = { written: 0, failed: 0, errors: [], skippedManual: [] };
+  if (rows.length === 0) return result;
 
-  for (const row of rows) {
-    const where = {
-      indexCode_routeCode_periodDate: {
-        indexCode: row.indexCode as IndexCode,
-        routeCode: row.routeCode,
-        periodDate: row.periodDate,
-      },
-    };
+  // One query for every slot this batch touches, instead of a find-then-write
+  // round trip per row: with Supabase several hundred kilometres away, that
+  // was averaging ~250ms/round-trip, so a 90-day backfill across a few
+  // symbols (close to 200 rows x 2 queries) was the entire 60-100s this job
+  // used to take through the API route.
+  const existing =
+    source === "MANUAL"
+      ? []
+      : await prisma.freightIndex.findMany({
+          where: {
+            OR: rows.map((row) => ({
+              indexCode: row.indexCode as IndexCode,
+              routeCode: row.routeCode,
+              periodDate: row.periodDate,
+            })),
+          },
+          select: { indexCode: true, routeCode: true, periodDate: true, source: true },
+        });
+  const manualKeys = new Set(
+    existing.filter((e) => e.source === "MANUAL").map((e) => freightIndexKey(e)),
+  );
 
-    try {
-      const existing = await prisma.freightIndex.findUnique({ where, select: { source: true } });
-      if (existing?.source === "MANUAL" && source !== "MANUAL") {
-        result.skippedManual.push(
-          `${row.indexCode}/${row.routeCode}@${row.periodDate.toISOString().slice(0, 10)}`,
-        );
-        continue;
-      }
+  const outcomes = await Promise.allSettled(
+    rows.map(async (row) => {
+      if (manualKeys.has(freightIndexKey(row))) return "skipped" as const;
 
       await prisma.freightIndex.upsert({
-        where,
+        where: {
+          indexCode_routeCode_periodDate: {
+            indexCode: row.indexCode as IndexCode,
+            routeCode: row.routeCode,
+            periodDate: row.periodDate,
+          },
+        },
         create: {
           indexCode: row.indexCode as IndexCode,
           routeCode: row.routeCode,
@@ -75,17 +95,25 @@ export async function upsertFreightIndices(
           rawSnapshot: (row.rawSnapshot ?? undefined) as Prisma.InputJsonValue | undefined,
         },
       });
+      return "written" as const;
+    }),
+  );
 
-      result.written++;
-    } catch (error) {
+  outcomes.forEach((outcome, i) => {
+    const row = rows[i];
+    const label = `${row.indexCode}/${row.routeCode}@${row.periodDate.toISOString().slice(0, 10)}`;
+
+    if (outcome.status === "rejected") {
       result.failed++;
       result.errors.push(
-        `${row.indexCode}/${row.routeCode}@${row.periodDate.toISOString().slice(0, 10)}: ${
-          error instanceof Error ? error.message : String(error)
-        }`,
+        `${label}: ${outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)}`,
       );
+    } else if (outcome.value === "skipped") {
+      result.skippedManual.push(label);
+    } else {
+      result.written++;
     }
-  }
+  });
 
   return result;
 }
@@ -93,10 +121,15 @@ export async function upsertFreightIndices(
 /** Upsert news on the feed guid. Re-running a feed adds only what is new. */
 export async function upsertNewsItems(items: ParsedNewsItem[]): Promise<UpsertResult> {
   const result: UpsertResult = { written: 0, failed: 0, errors: [], skippedManual: [] };
+  if (items.length === 0) return result;
 
-  for (const item of items) {
-    try {
-      await prisma.newsFeedItem.upsert({
+  // Parallel, not sequential, for the same reason as `upsertFreightIndices`:
+  // one item at a time across a ~250ms round trip to Supabase turns a feed's
+  // worth of items into a job that can run long enough to threaten the
+  // platform's execution-time limit.
+  const outcomes = await Promise.allSettled(
+    items.map((item) =>
+      prisma.newsFeedItem.upsert({
         where: { guid: item.guid },
         create: {
           guid: item.guid,
@@ -118,16 +151,22 @@ export async function upsertNewsItems(items: ParsedNewsItem[]): Promise<UpsertRe
           severity: item.severity,
           matchedKeywords: item.matchedKeywords,
         },
-      });
+      }),
+    ),
+  );
 
+  outcomes.forEach((outcome, i) => {
+    if (outcome.status === "fulfilled") {
       result.written++;
-    } catch (error) {
+    } else {
       result.failed++;
       result.errors.push(
-        `${item.guid}: ${error instanceof Error ? error.message : String(error)}`,
+        `${items[i].guid}: ${
+          outcome.reason instanceof Error ? outcome.reason.message : String(outcome.reason)
+        }`,
       );
     }
-  }
+  });
 
   return result;
 }

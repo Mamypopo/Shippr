@@ -9,8 +9,9 @@ import { ROUTE_CODES, ROUTE_LABELS } from "@/lib/benchmark";
 const INDEX_UNITS: Record<string, { unit: string; label: string }> = {
   WCI: { unit: "USD_PER_FEU", label: "USD ต่อ FEU" },
   SCFI: { unit: "POINTS", label: "จุด" },
-  BDI: { unit: "POINTS", label: "จุด" },
   BDRY: { unit: "USD", label: "USD" },
+  WTI: { unit: "USD", label: "USD ต่อบาร์เรล" },
+  BRENT: { unit: "USD", label: "USD ต่อบาร์เรล" },
 };
 
 /** Most recent Thursday — the day both WCI and SCFI publish. */

@@ -75,7 +75,7 @@ export const ahpEvaluateSchema = z.object({
 export type AHPEvaluatePayload = z.infer<typeof ahpEvaluateSchema>;
 
 export const manualIndexSchema = z.object({
-  indexCode: z.enum(["WCI", "SCFI", "BDI", "BDRY"]),
+  indexCode: z.enum(["WCI", "SCFI", "BDRY", "WTI", "BRENT"]),
   routeCode: z.string().min(1).max(30).default("COMPOSITE"),
   periodDate: z.coerce.date(),
   value: z.number().finite().positive().max(100_000),

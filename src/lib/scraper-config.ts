@@ -246,14 +246,22 @@ export const NEWS_FEEDS: FeedConfig[] = [
 /** How many items to keep per feed per run. */
 export const MAX_ITEMS_PER_FEED = 40;
 
-/** Yahoo Finance symbols for the daily sentiment job. */
+/**
+ * Yahoo Finance symbols for the daily sentiment job.
+ *
+ * The Baltic Dry Index (`^BDI`) is deliberately absent: Yahoo carries zero
+ * data for it — confirmed with both a direct quote and a symbol search
+ * turning up nothing, not a transient gap — because the Baltic Exchange
+ * sells it commercially rather than publishing it freely. BDRY (a traded
+ * ETF) already stood in as a correlated proxy; WTI and Brent crude are
+ * tracked alongside it because bunker fuel is a direct, major cost input to
+ * ocean freight rates, making crude a relevant signal in its own right.
+ */
 export const MARKET_SYMBOLS = {
-  /**
-   * Yahoo's coverage of the Baltic Dry Index is patchy and frequently returns
-   * nothing. The job records that as a failure for this symbol alone and
-   * carries on with BDRY rather than blanking the whole widget.
-   */
-  BDI: "^BDI",
-  /** A liquid ETF — reliably quoted, and a usable proxy when ^BDI is missing. */
+  /** A liquid dry-bulk shipping ETF — reliably quoted. */
   BDRY: "BDRY",
+  /** WTI crude oil futures — the US benchmark. */
+  WTI: "CL=F",
+  /** Brent crude oil futures — the international benchmark. */
+  BRENT: "BZ=F",
 } as const;

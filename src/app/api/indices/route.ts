@@ -1,7 +1,7 @@
 import { getAllIndexSeries, getIndexSeries } from "@/lib/queries";
 import type { IndexCode } from "@/generated/prisma/enums";
 
-const VALID_CODES = new Set(["WCI", "SCFI", "BDI", "BDRY"]);
+const VALID_CODES = new Set(["WCI", "SCFI", "BDRY", "WTI", "BRENT"]);
 
 /**
  * Index series with derived metrics for the charts.

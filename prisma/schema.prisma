@@ -17,8 +17,9 @@ datasource db {
 enum IndexCode {
   WCI // Drewry World Container Index
   SCFI // Shanghai Containerized Freight Index
-  BDI // Baltic Dry Index
   BDRY // Breakwave Dry Bulk Shipping ETF
+  WTI // WTI crude oil futures — proxy for bunker fuel cost
+  BRENT // Brent crude oil futures — proxy for bunker fuel cost
 }
 
 enum IndexUnit {

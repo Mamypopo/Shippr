@@ -99,7 +99,7 @@ npm run db:migrate   # สร้าง migration ใหม่หลังแก�
 | Route | ตาราง | ทำอะไร |
 | --- | --- | --- |
 | `/api/cron/freight-index` | ศุกร์ 10:00 UTC | Scrape Drewry WCI และ SCFI |
-| `/api/cron/market-sentiment` | ทุกวัน 06:00 UTC | ดึง BDI และ BDRY จาก Yahoo Finance |
+| `/api/cron/market-sentiment` | ทุกวัน 06:00 UTC | ดึง BDRY, WTI, Brent จาก Yahoo Finance (ตัด BDI ออก เพราะ Yahoo ไม่มีข้อมูลนี้เลย) |
 | `/api/cron/news` | ทุกวัน 07:00 UTC | อ่าน RSS จาก Loadstar และ gCaptain |
 
 ### ข่าวทุก 4 ชั่วโมงบน Vercel Hobby
