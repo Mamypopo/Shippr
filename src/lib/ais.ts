@@ -16,12 +16,30 @@
  *
  * Field names below follow aisstream.io's documented `PositionReport`
  * message shape (`UserID`, `Latitude`, `Longitude`, `Sog`, `Cog`,
- * `NavigationalStatus`). `MetaData`'s own field names are read
- * defensively — the docs describe it only as "normalized context such as
- * MMSI and last known position" without a worked example — so this reads
- * `UserID` from the typed `PositionReport` body (confirmed from the
- * documented schema) rather than depending on an unconfirmed `MetaData`
- * shape for anything load-bearing.
+ * `NavigationalStatus`) — confirmed against real traffic from the live
+ * stream, not just the docs.
+ *
+ * Two things that did NOT work as documented, found by testing against the
+ * real service rather than trusting the docs page:
+ *
+ * 1. `event.data` arrives as a `Blob`, not a string — `WebSocket`'s default
+ *    `binaryType` is `"blob"`, and aisstream.io appears to send frames in a
+ *    way Node's WebSocket treats as binary even though the payload is JSON
+ *    text. `String(blob)` silently stringifies to `"[object Blob]"` instead
+ *    of throwing, which would have made every message look "malformed" with
+ *    no error ever surfacing. Every message is read via `.text()` instead.
+ * 2. The subscription's `FiltersShipMMSI` field does not narrow results —
+ *    it suppresses them. Repeated tests subscribed to MMSIs confirmed live
+ *    one second earlier on a separate, unfiltered connection; every
+ *    subscription that included `FiltersShipMMSI` (correct values, made-up
+ *    values, didn't matter) received zero `PositionReport`s before the
+ *    listening window ran out, while the identical subscription with that
+ *    field left out entirely returned a full firehose within milliseconds.
+ *    So the field isn't just a no-op to route around — it actively breaks
+ *    the subscription — which is why it's omitted here rather than sent
+ *    "as a hint." Filtering happens entirely client-side instead: every
+ *    tracked MMSI is kept in the `wanted` set below, checked against each
+ *    incoming report before it's kept.
  */
 
 const STREAM_URL = "wss://stream.aisstream.io/v0/stream";
@@ -116,6 +134,8 @@ export async function fetchVesselPositions(
 ): Promise<VesselPositionReport[]> {
   if (mmsiList.length === 0) return [];
 
+  const wanted = new Set(mmsiList);
+
   return new Promise((resolve, reject) => {
     const latest = new Map<number, VesselPositionReport>();
     const ws = new WebSocket(STREAM_URL);
@@ -141,17 +161,25 @@ export async function fetchVesselPositions(
         JSON.stringify({
           APIKey: apiKey,
           BoundingBoxes: WORLDWIDE_BOUNDING_BOX,
-          FiltersShipMMSI: mmsiList.map(String),
-          FilterMessageTypes: ["PositionReport"],
+          // `FiltersShipMMSI` is deliberately omitted, not just distrusted —
+          // see the module doc comment. Including it at all, even with
+          // correct values, was confirmed to suppress every PositionReport
+          // rather than merely failing to narrow them, across repeated
+          // tests against vessels confirmed live seconds earlier on an
+          // unfiltered connection. The `wanted` set below does the only
+          // filtering that actually happens.
         }),
       );
     });
 
-    ws.addEventListener("message", (event) => {
+    ws.addEventListener("message", async (event) => {
       try {
-        const text = typeof event.data === "string" ? event.data : String(event.data);
+        const text =
+          typeof event.data === "string"
+            ? event.data
+            : await (event.data as Blob).text();
         const report = parsePositionReportMessage(JSON.parse(text));
-        if (report) latest.set(report.mmsi, report);
+        if (report && wanted.has(report.mmsi)) latest.set(report.mmsi, report);
       } catch {
         // A malformed single message must not fail the whole batch.
       }
