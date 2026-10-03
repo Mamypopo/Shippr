@@ -6,7 +6,7 @@ import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "
 import { latestRunsBySource, type LatestRun } from "@/lib/ingest";
 import { routeLabel } from "@/lib/benchmark";
 import { ManualIndexForm } from "./ManualIndexForm";
-import { RunIngestionButton } from "./RunIngestionButton";
+import { RunIngestionButton } from "@/components/chrome/RunIngestionButton";
 
 export const dynamic = "force-dynamic";
 

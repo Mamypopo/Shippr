@@ -1,5 +1,6 @@
 import Link from "next/link";
 
+import { RunIngestionButton } from "@/components/chrome/RunIngestionButton";
 import { getSessionUser } from "@/lib/auth";
 import { prisma } from "@/lib/db";
 import { getTrackedVessels } from "@/lib/queries";
@@ -24,10 +25,16 @@ export default async function AdminVesselsPage() {
   return (
     <div className="mx-auto flex max-w-7xl flex-col gap-4 px-4 py-5 sm:px-6">
       <header className="panel px-4 py-4">
-        <h1 className="text-lead">ติดตามเรือ</h1>
+        <div className="flex items-start justify-between gap-3">
+          <h1 className="text-lead">ติดตามเรือ</h1>
+          {user && <RunIngestionButton jobKey="vessel-tracking" label="ตำแหน่งเรือที่ติดตาม" />}
+        </div>
         <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-ink-soft">
           ติดตามเรือเฉพาะลำที่มีสินค้าของเราอยู่จริง ด้วยหมายเลข MMSI (ระบบ AIS)
-          ไม่ใช่แผนที่ภาพรวมแบบหน้าแรก — ตำแหน่งอัปเดตทุก 15 นาทีเมื่อเรือส่งสัญญาณอยู่ในรัศมีสถานีรับ
+          ไม่ใช่แผนที่ภาพรวมแบบหน้าแรก — ตำแหน่งอัปเดตทุก 15 นาทีก็ต่อเมื่อตั้งค่า GitHub Actions
+          ไว้แล้วบน deployment จริง (ดู README) ถ้ายังไม่ได้ตั้งค่า หรืออยากดึงตำแหน่งทันทีไม่ต้องรอ
+          กดปุ่ม &quot;ดึงตอนนี้&quot; ด้านบนได้เลย — เรือจะมีตำแหน่งให้เห็นก็ต่อเมื่อเรือส่งสัญญาณ AIS
+          อยู่ในช่วงเวลาที่ระบบฟังอยู่พอดี (ไม่ได้การันตีว่ากดแล้วจะเจอทันทีเสมอไป)
         </p>
       </header>
 

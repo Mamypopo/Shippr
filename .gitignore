@@ -46,3 +46,6 @@ next-env.d.ts
 # generated prisma client
 /src/generated
 dev.log
+
+# Claude Code session state — local to this machine's session, not project source.
+.claude/
