@@ -1,0 +1,62 @@
+name: Ingest disruption news
+
+# Vercel's Hobby plan caps cron at once per day, which is too slow for a
+# disruption radar — a Red Sea closure announced at 08:00 should not surface
+# at 07:00 the next morning. GitHub Actions has no such cap, so the frequent
+# job lives here and hits the same authenticated endpoint.
+#
+# Enabling this supersedes the daily "/api/cron/news" entry in vercel.json.
+# Remove that entry so the two do not both run.
+#
+# Required repository secrets (Settings > Secrets and variables > Actions):
+#   APP_URL      https://your-deployment.vercel.app  (no trailing slash)
+#   CRON_SECRET  the same value set in the Vercel environment
+
+on:
+  schedule:
+    # Every four hours. GitHub queues scheduled runs under load, so treat the
+    # time as approximate — fine for a feed that is itself eventually consistent.
+    - cron: "0 */4 * * *"
+  workflow_dispatch:
+
+concurrency:
+  # A delayed run must not overlap the next one. The endpoint is idempotent,
+  # but two concurrent passes just write the same rows twice over.
+  group: ingest-news
+  cancel-in-progress: false
+
+jobs:
+  ingest:
+    runs-on: ubuntu-latest
+    timeout-minutes: 5
+
+    steps:
+      - name: Fetch feeds
+        env:
+          APP_URL: ${{ secrets.APP_URL }}
+          CRON_SECRET: ${{ secrets.CRON_SECRET }}
+        run: |
+          set -euo pipefail
+
+          if [ -z "${APP_URL:-}" ] || [ -z "${CRON_SECRET:-}" ]; then
+            echo "APP_URL and CRON_SECRET must be set as repository secrets." >&2
+            exit 1
+          fi
+
+          status=$(curl --silent --show-error --fail-with-body \
+            --max-time 90 \
+            --retry 2 --retry-delay 10 --retry-all-errors \
+            --write-out '%{http_code}' \
+            --output response.json \
+            --header "Authorization: Bearer ${CRON_SECRET}" \
+            "${APP_URL}/api/cron/news")
+
+          echo "HTTP ${status}"
+          cat response.json
+
+          # The route answers 200 for a full or partial pass and 500 when
+          # every feed failed. Let a total failure fail the workflow so it
+          # shows up in the Actions tab rather than only in the run log.
+          if [ "${status}" != "200" ]; then
+            exit 1
+          fi

@@ -89,7 +89,27 @@ npm run db:migrate   # สร้าง migration ใหม่หลังแก�
 | --- | --- | --- |
 | `/api/cron/freight-index` | ศุกร์ 10:00 UTC | Scrape Drewry WCI และ SCFI |
 | `/api/cron/market-sentiment` | ทุกวัน 06:00 UTC | ดึง BDI และ BDRY จาก Yahoo Finance |
-| `/api/cron/news` | ทุก 4 ชม. | อ่าน RSS จาก Loadstar และ gCaptain |
+| `/api/cron/news` | ทุกวัน 07:00 UTC | อ่าน RSS จาก Loadstar และ gCaptain |
+
+### ข่าวทุก 4 ชั่วโมงบน Vercel Hobby
+
+Vercel แพ็กเกจ Hobby จำกัด cron ไว้ที่วันละครั้ง ซึ่งช้าเกินไปสำหรับเรดาร์เตือนภัย —
+ข่าวทะเลแดงที่ประกาศตอนบ่ายไม่ควรเพิ่งขึ้นหน้าจอตอนเช้าวันถัดไป
+
+`.github/workflows/ingest-news.yml` จึงยิง endpoint เดิมทุก 4 ชั่วโมงจาก GitHub Actions
+ซึ่งไม่มีข้อจำกัดนี้และไม่มีค่าใช้จ่าย เปิดใช้โดยตั้ง repository secret สองตัวที่
+Settings → Secrets and variables → Actions
+
+| Secret | ค่า |
+| --- | --- |
+| `APP_URL` | URL ของ deployment เช่น `https://shippr.vercel.app` ไม่ต้องมี `/` ท้าย |
+| `CRON_SECRET` | ค่าเดียวกับที่ตั้งใน Vercel environment |
+
+เมื่อเปิด workflow นี้แล้ว **ให้ลบรายการ `/api/cron/news` ออกจาก `vercel.json`**
+ไม่อย่างนั้นจะรันซ้อนกันวันละครั้ง (ไม่ทำให้ข้อมูลซ้ำ เพราะเป็น upsert แต่ทำให้ run log อ่านยาก)
+
+ถ้าอัปเกรดเป็น Pro แล้ว ใช้ cron ของ Vercel อย่างเดียวได้ โดยเปลี่ยน schedule
+ของ news กลับเป็น `0 */4 * * *` แล้วปิด workflow
 
 ยิงเองเพื่อทดสอบ
 
