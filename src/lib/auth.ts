@@ -1,19 +1,21 @@
 /**
- * Session and role resolution.
+ * Sign-in and authorisation.
  *
- * Supabase owns authentication; `UserProfile` owns the role. Keeping the role
- * in our own table means an authorisation check is a local query rather than
- * a round trip, and the role can be audited alongside the decisions a user
- * made with it.
+ * Accounts are created by an admin through the CLI; there is no self-serve
+ * signup and no email. That removes the parts of authentication that are
+ * genuinely hard to get right — verification mail, reset tokens, account
+ * recovery — and leaves checking a password and issuing a session, which has
+ * a known-good recipe.
  */
 
 import { prisma } from "./db";
-import { createSupabaseServerClient } from "./supabase/server";
+import { fakeVerifyDelay, normalizeUsername, verifyPassword } from "./password";
+import { createSession, readSession } from "./session";
 import type { UserRole } from "@/generated/prisma/enums";
 
 export interface SessionUser {
   id: string;
-  email: string;
+  username: string;
   fullName: string | null;
   orgName: string | null;
   role: UserRole;
@@ -21,60 +23,128 @@ export interface SessionUser {
 
 const ROLE_RANK: Record<UserRole, number> = { VIEWER: 0, ANALYST: 1, ADMIN: 2 };
 
-/** Auth is optional for reading; the dashboard works without it configured. */
-export function isSupabaseConfigured(): boolean {
-  return Boolean(
-    process.env.NEXT_PUBLIC_SUPABASE_URL && process.env.NEXT_PUBLIC_SUPABASE_ANON_KEY,
-  );
+/** Wrong password this many times and the account locks. */
+export const MAX_FAILED_ATTEMPTS = 5;
+export const LOCKOUT_MINUTES = 15;
+
+export type SignInResult =
+  | { ok: true; user: SessionUser }
+  | { ok: false; reason: "INVALID" | "LOCKED" | "DISABLED"; retryAfterMinutes?: number };
+
+/**
+ * Check credentials and start a session.
+ *
+ * Every failure path returns the same generic `INVALID` and takes roughly the
+ * same time, so neither the message nor the response time reveals whether a
+ * username exists. The exception is `LOCKED`, which has to be distinguishable
+ * or the user cannot tell why a correct password is being refused.
+ */
+export async function signIn(
+  rawUsername: string,
+  password: string,
+  userAgent?: string | null,
+): Promise<SignInResult> {
+  const username = normalizeUsername(rawUsername);
+
+  const user = await prisma.userProfile.findUnique({ where: { username } });
+
+  if (!user) {
+    // Burn comparable time so a missing account is not faster than a wrong
+    // password, which would otherwise enumerate valid usernames.
+    await fakeVerifyDelay();
+    return { ok: false, reason: "INVALID" };
+  }
+
+  if (!user.isActive) {
+    await fakeVerifyDelay();
+    return { ok: false, reason: "DISABLED" };
+  }
+
+  if (user.lockedUntil && user.lockedUntil.getTime() > Date.now()) {
+    return {
+      ok: false,
+      reason: "LOCKED",
+      retryAfterMinutes: Math.max(
+        1,
+        Math.ceil((user.lockedUntil.getTime() - Date.now()) / 60_000),
+      ),
+    };
+  }
+
+  const valid = await verifyPassword(password, user.passwordHash);
+
+  if (!valid) {
+    const failedAttempts = user.failedAttempts + 1;
+    const shouldLock = failedAttempts >= MAX_FAILED_ATTEMPTS;
+
+    await prisma.userProfile.update({
+      where: { id: user.id },
+      data: {
+        failedAttempts: shouldLock ? 0 : failedAttempts,
+        lockedUntil: shouldLock ? new Date(Date.now() + LOCKOUT_MINUTES * 60_000) : null,
+      },
+    });
+
+    return shouldLock
+      ? { ok: false, reason: "LOCKED", retryAfterMinutes: LOCKOUT_MINUTES }
+      : { ok: false, reason: "INVALID" };
+  }
+
+  await prisma.userProfile.update({
+    where: { id: user.id },
+    data: { failedAttempts: 0, lockedUntil: null, lastLoginAt: new Date() },
+  });
+
+  await createSession(user.id, userAgent);
+
+  return {
+    ok: true,
+    user: {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      orgName: user.orgName,
+      role: user.role,
+    },
+  };
 }
 
 /**
- * The signed-in user, with their profile row created on first sight.
+ * The signed-in user, or null.
  *
- * `getUser()` rather than `getSession()`: the former verifies the JWT with
- * Supabase, the latter trusts a cookie the browser could have forged.
- *
- * Returns null rather than throwing when auth is unconfigured or unreachable.
- * Every caller already renders a signed-out state, and failing closed to
- * "signed out" is both safe and far better than a 500 on a page whose read
- * half needs no account at all.
+ * Returns null rather than throwing on any failure. Every caller renders a
+ * signed-out state, and failing closed to "signed out" is both safe and
+ * better than a 500 on a page whose read half needs no account.
  */
 export async function getSessionUser(): Promise<SessionUser | null> {
-  if (!isSupabaseConfigured()) return null;
-
-  let user: { id: string; email?: string; user_metadata?: Record<string, unknown> } | null = null;
-
   try {
-    const supabase = await createSupabaseServerClient();
-    const { data, error } = await supabase.auth.getUser();
-    if (error) return null;
-    user = data.user;
+    const session = await readSession();
+    if (!session) return null;
+
+    const user = await prisma.userProfile.findUnique({
+      where: { id: session.userId },
+      select: {
+        id: true,
+        username: true,
+        fullName: true,
+        orgName: true,
+        role: true,
+        isActive: true,
+      },
+    });
+
+    if (!user?.isActive) return null;
+
+    return {
+      id: user.id,
+      username: user.username,
+      fullName: user.fullName,
+      orgName: user.orgName,
+      role: user.role,
+    };
   } catch {
     return null;
   }
-
-  if (!user?.email) return null;
-
-  const profile = await prisma.userProfile.upsert({
-    where: { id: user.id },
-    create: {
-      id: user.id,
-      email: user.email,
-      fullName: (user.user_metadata?.full_name as string | undefined) ?? null,
-      // First account in an empty instance becomes the admin; everyone after
-      // starts as a viewer and is promoted deliberately.
-      role: (await prisma.userProfile.count()) === 0 ? "ADMIN" : "VIEWER",
-    },
-    update: { email: user.email },
-  });
-
-  return {
-    id: profile.id,
-    email: profile.email,
-    fullName: profile.fullName,
-    orgName: profile.orgName,
-    role: profile.role,
-  };
 }
 
 export function hasRole(user: SessionUser | null, required: UserRole): boolean {
@@ -89,7 +159,7 @@ export interface AuthFailure {
 /**
  * Guard for route handlers. Returns the user, or a ready-made response.
  *
- * 401 and 403 are kept distinct: "sign in" and "your account cannot do this"
+ * 401 and 403 stay distinct: "sign in" and "your account cannot do this"
  * need different handling in the UI.
  */
 export async function requireRole(
@@ -98,13 +168,13 @@ export async function requireRole(
   const user = await getSessionUser();
 
   if (!user) {
-    return { response: Response.json({ error: "Sign in required." }, { status: 401 }) };
+    return { response: Response.json({ error: "ต้องเข้าสู่ระบบก่อน" }, { status: 401 }) };
   }
 
   if (!hasRole(user, required)) {
     return {
       response: Response.json(
-        { error: `This action requires the ${required} role; your account is ${user.role}.` },
+        { error: `การกระทำนี้ต้องมีสิทธิ์ ${required} แต่บัญชีของคุณเป็น ${user.role}` },
         { status: 403 },
       ),
     };
@@ -117,4 +187,10 @@ export function isAuthFailure(
   result: { user: SessionUser } | AuthFailure,
 ): result is AuthFailure {
   return "response" in result;
+}
+
+/** Display name for a byline: the person's name if set, else their username. */
+export function displayName(user: SessionUser | null): string {
+  if (!user) return "";
+  return user.fullName?.trim() || user.username;
 }

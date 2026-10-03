@@ -16,7 +16,7 @@
 | --- | --- |
 | Frontend | Next.js 16 (App Router), React 19, TypeScript, Tailwind CSS 4 |
 | ฐานข้อมูล | Supabase Postgres + Prisma 7 (ผ่าน `@prisma/adapter-pg`) |
-| Auth | Supabase Auth แบบ magic link + role เก็บใน `UserProfile` |
+| Auth | เขียนเอง — username + password (scrypt จาก `node:crypto`) + session เก็บใน DB |
 | กราฟ | Recharts สำหรับ radar, inline SVG สำหรับ sparkline |
 | ดึงข้อมูล | axios + cheerio, rss-parser, yahoo-finance2 |
 | ตั้งเวลา | Vercel Cron |
@@ -39,16 +39,17 @@ npm install
 | ตัวแปร | เอามาจากไหน |
 | --- | --- |
 | `DATABASE_URL` | Supabase → Connect → **Transaction pooler** (พอร์ต 6543) |
-| `DIRECT_URL` | Supabase → Connect → **Direct connection** (พอร์ต 5432) |
-| `NEXT_PUBLIC_SUPABASE_URL` | Project Settings → API |
-| `NEXT_PUBLIC_SUPABASE_ANON_KEY` | Project Settings → API |
+| `DIRECT_URL` | Supabase → Connect → **Session pooler** (พอร์ต 5432) |
 | `CRON_SECRET` | `node -e "console.log(require('crypto').randomBytes(32).toString('hex'))"` |
 
 ทำไมต้องมีสองเส้น: migration รัน DDL ซึ่งผ่าน pgbouncer ไม่ได้ จึงต้องใช้ direct
 connection ส่วนตัวแอปตอนรันใช้ pooler เพื่อไม่ให้ connection หมด
 
-> ถ้าเครือข่ายเป็น IPv4 อย่างเดียวแล้ว direct connection ต่อไม่ติด ให้ใช้
-> **Session pooler** (พอร์ต 5432 เช่นกัน) ใน `DIRECT_URL` แทน
+> ใช้ Session pooler เป็นค่าเริ่มต้นเพราะ direct connection (`db.<ref>.supabase.co`)
+> เป็น IPv6 อย่างเดียว เครือข่ายที่ไม่มี IPv6 จะได้ error P1001
+>
+> รหัสผ่านที่มีอักขระสงวนของ URL เช่น `#` ต้อง encode ก่อน ไม่งั้นทุกอย่างหลังอักขระนั้นจะหายไป
+> `node -e "console.log(encodeURIComponent('รหัสผ่าน'))"`
 
 ### 3. สร้างตารางและ seed
 
@@ -58,9 +59,19 @@ npm run db:seed           # seed ท่าเรือ hub 6 แห่ง
 npm run db:seed -- --demo # เพิ่มข้อมูลตัวอย่าง 26 สัปดาห์ สำหรับดู UI ก่อนมีข้อมูลจริง
 ```
 
+### 4. สร้างบัญชีผู้ดูแลคนแรก
+
+ระบบไม่มีการสมัครเอง บัญชีแรกต้องสร้างจาก CLI ไม่งั้นจะไม่มีใครเข้าหลังบ้านได้เลย
+
+```bash
+npm run user create napat ADMIN
+```
+
+คำสั่งจะถามรหัสผ่านแบบไม่แสดงบนหน้าจอ (ไม่รับรหัสผ่านเป็น argument เพราะจะไปค้างใน shell history และใน process list)
+
 ข้อมูลตัวอย่างบันทึกเป็น `source=MANUAL` พร้อมหมายเหตุกำกับ ลบออกก่อนใช้งานจริงได้ง่าย
 
-### 4. รัน
+### 5. รัน
 
 ```bash
 npm run dev
@@ -157,6 +168,26 @@ scraper จึงเปราะโดยธรรมชาติ **หน้า
 
 decision memo ที่ลูกค้าเปิดอ่านอีก 6 สัปดาห์ต้องบอกว่าตลาด **ณ วันที่ตัดสินใจ** เป็นอย่างไร
 ถ้าคำนวณสดจาก `FreightIndex` ทุกครั้ง ประวัติการตัดสินใจจะถูกเขียนทับเงียบๆ
+
+### ทำไมถึงเขียน auth เอง
+
+คำเตือน "อย่าเขียน auth เอง" หมายถึงส่วนที่พลาดง่ายและพลาดแล้วเจ็บ — OAuth,
+การยืนยันอีเมล, ลิงก์รีเซ็ตรหัสผ่าน, การกู้บัญชี ซึ่งโปรเจกต์นี้ไม่มีสักอย่าง
+ทีมมีไม่กี่คน admin สร้างบัญชีให้ ไม่มีสมัครเอง เหลือแค่ตรวจรหัสผ่านแล้วออก session
+
+ที่ยึดไว้:
+
+- **scrypt จาก `node:crypto`** พารามิเตอร์ตามเกณฑ์ OWASP (N=2^14) เก็บพารามิเตอร์ไว้ในสตริงแฮช
+  เพื่อขึ้น cost ภายหลังได้โดยไม่ต้องให้ทุกคนตั้งรหัสใหม่ ไม่ต้องลง dependency และไม่มีปัญหา native build
+- **ตอบช้าเท่ากัน** กรณีไม่มี username กับกรณีรหัสผิด ไม่งั้นเวลาตอบจะบอกได้ว่าชื่อไหนมีอยู่จริง
+- **เก็บแค่ SHA-256 ของ session token** ใน DB ถ้าฐานข้อมูลหลุด token ที่หลุดไปใช้ต่อไม่ได้
+- **session เป็นแถวในตาราง ไม่ใช่ JWT ที่เราเซ็นเอง** เพราะต้องเพิกถอนได้จริง
+  เปลี่ยนรหัสผ่านเมื่อไหร่ session เก่าถูกลบทั้งหมด
+- **ผิดเกิน 5 ครั้งล็อก 15 นาที** นับรายบัญชี
+
+**ไม่มีรีเซ็ตรหัสผ่านด้วยตัวเอง** ลืมรหัสต้องให้ admin สั่ง
+`npm run user passwd <ชื่อผู้ใช้>` นี่คือข้อแลกเปลี่ยนที่รับไว้โดยตั้งใจ
+เพื่อไม่ต้องมีระบบส่งอีเมลและ reset token ซึ่งเป็นส่วนที่เขียนพลาดง่ายที่สุดของงาน auth
 
 ### ค่าระวางที่ขึ้นคือสัญญาณเตือน ไม่ใช่สัญญาณดี
 

@@ -1,77 +1,89 @@
 "use client";
 
 import { useState } from "react";
+import { useRouter } from "next/navigation";
 
-import { createSupabaseBrowserClient } from "@/lib/supabase/client";
+export function SignInForm({ next }: { next?: string }) {
+  const router = useRouter();
 
-/**
- * Magic-link sign-in.
- *
- * No password to store, reset or leak, and a shared desk mailbox is how
- * forwarding teams already share access to carrier portals.
- */
-export function SignInForm() {
-  const [email, setEmail] = useState("");
-  const [state, setState] = useState<"idle" | "sending" | "sent" | "error">("idle");
-  const [message, setMessage] = useState("");
+  const [username, setUsername] = useState("");
+  const [password, setPassword] = useState("");
+  const [error, setError] = useState<string | null>(null);
+  const [busy, setBusy] = useState(false);
 
   async function handleSubmit(event: React.FormEvent) {
     event.preventDefault();
-    setState("sending");
+    setBusy(true);
+    setError(null);
 
     try {
-      const supabase = createSupabaseBrowserClient();
-      const { error } = await supabase.auth.signInWithOtp({
-        email: email.trim(),
-        options: { emailRedirectTo: `${window.location.origin}/auth/callback` },
+      const response = await fetch("/api/auth/login", {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({ username, password }),
       });
 
-      if (error) {
-        setState("error");
-        setMessage(error.message);
+      const body = await response.json();
+
+      if (!response.ok) {
+        setError(body.error ?? "เข้าสู่ระบบไม่สำเร็จ");
+        setPassword("");
         return;
       }
 
-      setState("sent");
+      // Only same-origin paths, so a crafted link cannot bounce a freshly
+      // signed-in user off to someone else's site.
+      router.push(next?.startsWith("/") ? next : "/");
+      router.refresh();
     } catch {
-      setState("error");
-      setMessage("ยังตั้งค่า Supabase ไม่ครบ ตรวจ NEXT_PUBLIC_SUPABASE_URL และ ANON_KEY ใน .env");
+      setError("ติดต่อเซิร์ฟเวอร์ไม่ได้ ลองอีกครั้ง");
+    } finally {
+      setBusy(false);
     }
   }
 
-  if (state === "sent") {
-    return (
-      <p className="mt-5 text-small leading-relaxed" style={{ color: "var(--color-ok)" }}>
-        ส่งลิงก์เข้าสู่ระบบไปที่ {email} แล้ว เปิดลิงก์ในอีเมลเพื่อเข้าใช้งาน
-        ลิงก์ใช้ได้ครั้งเดียวและหมดอายุใน 1 ชั่วโมง
-      </p>
-    );
-  }
-
   return (
-    <form onSubmit={handleSubmit} className="mt-5">
+    <form onSubmit={handleSubmit} className="mt-6 flex flex-col gap-4">
       <label className="block">
-        <span className="block text-micro text-ink-faint">อีเมล</span>
+        <span className="label">ชื่อผู้ใช้</span>
         <input
-          type="email"
-          value={email}
-          onChange={(e) => setEmail(e.target.value)}
+          type="text"
+          value={username}
+          onChange={(e) => setUsername(e.target.value)}
           required
-          autoComplete="email"
-          placeholder="you@company.co.th"
-          className="mt-1 w-full px-2 py-2 text-base"
+          autoFocus
+          autoComplete="username"
+          autoCapitalize="none"
+          spellCheck={false}
+          className="mt-1.5 w-full px-3 py-2 text-body"
         />
       </label>
 
+      <label className="block">
+        <span className="label">รหัสผ่าน</span>
+        <input
+          type="password"
+          value={password}
+          onChange={(e) => setPassword(e.target.value)}
+          required
+          autoComplete="current-password"
+          className="mt-1.5 w-full px-3 py-2 text-body"
+        />
+      </label>
+
+      {error && (
+        <p className="text-small" style={{ color: "var(--color-bad)" }} role="alert">
+          {error}
+        </p>
+      )}
+
       <button
         type="submit"
-        disabled={state === "sending" || email.trim() === ""}
-        className="mt-4 w-full btn-primary px-4 py-2 text-small"
+        disabled={busy || username.trim() === "" || password === ""}
+        className="btn-primary mt-1 w-full px-4 py-2.5 text-small"
       >
-        {state === "sending" ? "กำลังส่งลิงก์" : "ส่งลิงก์เข้าสู่ระบบ"}
+        {busy ? "กำลังเข้าสู่ระบบ" : "เข้าสู่ระบบ"}
       </button>
-
-      {state === "error" && <p className="mt-3 text-small text-bad">{message}</p>}
     </form>
   );
 }

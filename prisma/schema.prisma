@@ -267,18 +267,52 @@ model ScrapeRun {
 }
 
 model UserProfile {
-  /// Mirrors Supabase auth.users.id.
-  id        String   @id
-  email     String   @unique
-  fullName  String?
-  orgName   String?
-  role      UserRole @default(VIEWER)
+  id       String @id @default(cuid())
+  /// Lowercase, unique. The only thing a user types to identify themselves.
+  username String @unique
+  /// scrypt, stored as `scrypt$N$r$p$salt$hash`. See lib/password.ts.
+  passwordHash String
+  fullName String?
+  orgName  String?
+  role     UserRole @default(VIEWER)
+  isActive Boolean  @default(true)
+
+  /// Brute-force throttling. Reset to zero on a successful sign-in.
+  failedAttempts Int       @default(0)
+  /// Set when failedAttempts crosses the limit; sign-in refuses until it passes.
+  lockedUntil    DateTime?
+  lastLoginAt    DateTime?
+
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  sessions       Session[]
   decisions      AHPDecisionLog[]
   freightEntries FreightIndex[]
   portEntries    PortStatus[]
 
   @@map("user_profile")
+}
+
+/// A signed-in browser.
+///
+/// Only the SHA-256 of the cookie token is stored: a leaked database dump
+/// cannot then be replayed as a live session. Sessions are rows rather than
+/// self-signed tokens so that revoking one actually revokes it.
+model Session {
+  id        String   @id @default(cuid())
+  /// SHA-256 of the token held in the cookie. Never the token itself.
+  tokenHash String   @unique
+  userId    String
+  expiresAt DateTime
+  createdAt DateTime @default(now())
+  /// Rolling renewal, so an active user is not signed out mid-week.
+  lastSeenAt DateTime @default(now())
+  userAgent String?
+
+  user UserProfile @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@index([userId])
+  @@index([expiresAt])
+  @@map("session")
 }
