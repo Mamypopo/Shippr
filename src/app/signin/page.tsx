@@ -1,0 +1,18 @@
+import { SignInForm } from "./SignInForm";
+
+export const metadata = { title: "เข้าสู่ระบบ — Shippr" };
+
+export default function SignInPage() {
+  return (
+    <div className="mx-auto max-w-[32rem] px-4 py-10 sm:px-6">
+      <section className="plan px-5 py-6">
+        <h1 className="text-lead font-medium">เข้าสู่ระบบ</h1>
+        <p className="mt-2 text-small leading-relaxed text-hull-soft">
+          ใช้ลิงก์ที่ส่งเข้าอีเมล ไม่ต้องจำรหัสผ่าน
+          บัญชีแรกของระบบจะได้สิทธิ์ ADMIN บัญชีถัดไปเริ่มที่ VIEWER
+        </p>
+        <SignInForm />
+      </section>
+    </div>
+  );
+}

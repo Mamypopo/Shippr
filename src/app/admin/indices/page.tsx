@@ -1,0 +1,173 @@
+import Link from "next/link";
+
+import { getSessionUser, hasRole } from "@/lib/auth";
+import { prisma, toNumber } from "@/lib/db";
+import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "@/lib/format";
+import { latestRunsBySource } from "@/lib/ingest";
+import { routeLabel } from "@/lib/benchmark";
+import { ManualIndexForm } from "./ManualIndexForm";
+
+export const dynamic = "force-dynamic";
+
+export const metadata = { title: "กรอกข้อมูลตลาด — Shippr" };
+
+export default async function AdminIndicesPage() {
+  const [user, recent, runs] = await Promise.all([
+    getSessionUser(),
+    prisma.freightIndex.findMany({
+      orderBy: [{ periodDate: "desc" }, { indexCode: "asc" }],
+      take: 30,
+      select: {
+        id: true,
+        indexCode: true,
+        routeCode: true,
+        periodDate: true,
+        value: true,
+        unit: true,
+        source: true,
+      },
+    }),
+    latestRunsBySource(),
+  ]);
+
+  const canEdit = hasRole(user, "ANALYST");
+
+  return (
+    <div className="mx-auto flex max-w-350 flex-col gap-4 px-4 py-5 sm:px-6">
+      <header className="plan px-4 py-4">
+        <h1 className="text-lead font-medium">กรอกข้อมูลตลาด</h1>
+        <p className="mt-1 max-w-[70ch] text-small leading-relaxed text-hull-soft">
+          ดูสถานะการดึงข้อมูลอัตโนมัติ และกรอกค่าดัชนีที่ดึงเองไม่ได้
+        </p>
+      </header>
+
+      <IngestionStatus runs={runs} />
+
+      {canEdit ? (
+        <ManualIndexForm />
+      ) : (
+        <section className="plan px-4 py-5">
+          <p className="text-small text-hull-soft">
+            {user
+              ? `บัญชีของคุณมีสิทธิ์ ${user.role} จึงดูได้อย่างเดียว ต้องมีสิทธิ์ ANALYST ขึ้นไปจึงจะกรอกข้อมูลได้`
+              : "ต้องเข้าสู่ระบบก่อนจึงจะกรอกข้อมูลได้"}
+          </p>
+          {!user && (
+            <Link
+              href="/signin"
+              className="mt-3 inline-block border border-rule-heavy bg-plan px-3 py-1.5 text-small hover:bg-plan-sunk"
+            >
+              เข้าสู่ระบบ
+            </Link>
+          )}
+        </section>
+      )}
+
+      <section className="plan overflow-x-auto">
+        <div className="border-b border-rule px-4 py-2">
+          <h2 className="text-small font-medium">ค่าที่บันทึกล่าสุด</h2>
+        </div>
+
+        {recent.length === 0 ? (
+          <p className="px-4 py-6 text-small text-hull-soft">ยังไม่มีข้อมูลในระบบ</p>
+        ) : (
+          <table className="w-full border-collapse text-small">
+            <thead>
+              <tr className="text-micro text-hull-faint">
+                <th scope="col" className="border-b border-rule px-3 py-2 text-left">งวด</th>
+                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">ดัชนี</th>
+                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">เส้นทาง</th>
+                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-right">ค่า</th>
+                <th scope="col" className="border-b border-l border-rule px-3 py-2 text-left">ที่มา</th>
+              </tr>
+            </thead>
+            <tbody>
+              {recent.map((row) => (
+                <tr key={row.id}>
+                  <td className="tnum border-t border-rule px-3 py-2">
+                    {thaiShortDate(row.periodDate)}
+                  </td>
+                  <td className="border-l border-t border-rule px-3 py-2">{row.indexCode}</td>
+                  <td className="border-l border-t border-rule px-3 py-2">
+                    {routeLabel(row.routeCode)}
+                  </td>
+                  <td className="tnum border-l border-t border-rule px-3 py-2 text-right">
+                    {formatIndexValue(toNumber(row.value), row.unit)}
+                  </td>
+                  <td className="border-l border-t border-rule px-3 py-2 text-micro text-hull-faint">
+                    {SOURCE_LABELS[row.source] ?? row.source}
+                  </td>
+                </tr>
+              ))}
+            </tbody>
+          </table>
+        )}
+      </section>
+    </div>
+  );
+}
+
+const RUN_SOURCES: Array<{ key: string; label: string }> = [
+  { key: "freight-index", label: "ดัชนีค่าระวาง (รายสัปดาห์)" },
+  { key: "market-sentiment", label: "BDI / BDRY (รายวัน)" },
+  { key: "news", label: "ข่าว RSS (ทุก 4 ชม.)" },
+];
+
+/**
+ * Ingestion health. The point of surfacing this is that a job which has been
+ * quietly failing for a fortnight looks exactly like a quiet market unless
+ * someone says so.
+ */
+function IngestionStatus({
+  runs,
+}: {
+  runs: Record<string, { status: string; startedAt: Date; rowsWritten: number } | undefined>;
+}) {
+  return (
+    <section className="plan">
+      <div className="border-b border-rule px-4 py-2">
+        <h2 className="text-small font-medium">สถานะการดึงข้อมูลอัตโนมัติ</h2>
+      </div>
+
+      <div className="grid grid-cols-1 sm:grid-cols-3">
+        {RUN_SOURCES.map((source, i) => {
+          const run = runs[source.key];
+          const ink =
+            !run || run.status === "FAILED"
+              ? "var(--color-hazard)"
+              : run.status === "PARTIAL"
+                ? "var(--color-watch)"
+                : "var(--color-clear)";
+
+          return (
+            <article
+              key={source.key}
+              className={`border-t border-rule p-3 sm:border-t-0 ${i > 0 ? "sm:border-l" : ""}`}
+            >
+              <p className="text-small">{source.label}</p>
+              {run ? (
+                <>
+                  <p className="mt-1 text-small" style={{ color: ink }}>
+                    {run.status === "SUCCESS"
+                      ? "สำเร็จ"
+                      : run.status === "PARTIAL"
+                        ? "สำเร็จบางส่วน"
+                        : "ล้มเหลว"}
+                  </p>
+                  <p className="mt-1 text-micro text-hull-faint">
+                    {relativeDaysTh(run.startedAt)} · เขียน{" "}
+                    <span className="tnum">{run.rowsWritten}</span> แถว
+                  </p>
+                </>
+              ) : (
+                <p className="mt-1 text-small" style={{ color: ink }}>
+                  ยังไม่เคยรัน
+                </p>
+              )}
+            </article>
+          );
+        })}
+      </div>
+    </section>
+  );
+}

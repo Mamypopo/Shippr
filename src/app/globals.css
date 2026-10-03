@@ -1,26 +1,156 @@
 @import "tailwindcss";
 
-:root {
-  --background: #ffffff;
-  --foreground: #171717;
+/*
+ * Shippr — stowage plan.
+ *
+ * The page is one continuous ruled grid and colour means risk. Nothing else
+ * on the page is coloured: links, buttons and headings are ink. See
+ * docs/design-notes.md for the reasoning.
+ */
+
+@theme {
+  /* Ink and ground */
+  --color-hull: #1b2a32;
+  --color-hull-soft: #4a5a62;
+  --color-hull-faint: #7b8990;
+  --color-deck: #e4e7e3;
+  --color-plan: #f5f6f3;
+  --color-plan-sunk: #dcdfda;
+
+  /* Grid */
+  --color-rule: #a8b2ad;
+  --color-rule-heavy: #5c6b66;
+
+  /* Status — the only chroma on the page */
+  --color-clear: #2f6b4f;
+  --color-clear-fill: #cfe0d4;
+  --color-watch: #b5811f;
+  --color-watch-fill: #f0e1c0;
+  --color-hazard: #a33027;
+  --color-hazard-fill: #efcfca;
+
+  --font-sans: var(--font-plex-thai), ui-sans-serif, system-ui, sans-serif;
+  --font-mono: var(--font-plex-mono), ui-monospace, monospace;
+
+  /* Major third from 16 */
+  --text-micro: 0.6875rem; /* 11 */
+  --text-small: 0.8125rem; /* 13 */
+  --text-base: 1rem;
+  --text-lead: 1.25rem;
+  --text-figure-sm: 1.5625rem; /* 25 */
+  --text-figure: 1.9375rem; /* 31 */
+  --text-figure-lg: 2.4375rem; /* 39 */
+  --text-display: 3.0625rem; /* 49 */
 }
 
-@theme inline {
-  --color-background: var(--background);
-  --color-foreground: var(--foreground);
-  --font-sans: var(--font-geist-sans);
-  --font-mono: var(--font-geist-mono);
-}
+@layer base {
+  html {
+    background: var(--color-deck);
+    color: var(--color-hull);
+  }
 
-@media (prefers-color-scheme: dark) {
-  :root {
-    --background: #0a0a0a;
-    --foreground: #ededed;
+  body {
+    font-family: var(--font-sans);
+    /* Thai ascenders and tone marks need the extra room. */
+    line-height: 1.6;
+    -webkit-font-smoothing: antialiased;
+  }
+
+  /* Figures must line up in a column to be comparable down the page. */
+  .tnum {
+    font-family: var(--font-mono);
+    font-variant-numeric: tabular-nums;
+    font-feature-settings: "tnum" 1;
+  }
+
+  :focus-visible {
+    outline: 2px solid var(--color-hull);
+    outline-offset: 2px;
+  }
+
+  ::selection {
+    background: var(--color-hull);
+    color: var(--color-plan);
+  }
+
+  /* The plan's own border is heavier than the cell divisions inside it. */
+  .plan {
+    border: 2px solid var(--color-rule-heavy);
+    background: var(--color-plan);
+  }
+
+  .plan-divide-x > * + * {
+    border-left: 1px solid var(--color-rule);
+  }
+
+  .plan-divide-y > * + * {
+    border-top: 1px solid var(--color-rule);
+  }
+
+  /* A slot address, as printed in the corner of a bay-plan cell. */
+  .slot-address {
+    font-family: var(--font-mono);
+    font-size: var(--text-micro);
+    letter-spacing: 0.04em;
+    color: var(--color-hull-faint);
+  }
+
+  input,
+  select,
+  textarea {
+    background: var(--color-plan);
+    border: 1px solid var(--color-rule);
+    color: var(--color-hull);
+  }
+
+  input:focus,
+  select:focus,
+  textarea:focus {
+    border-color: var(--color-hull);
+    outline: none;
+    box-shadow: inset 0 0 0 1px var(--color-hull);
   }
 }
 
-body {
-  background: var(--background);
-  color: var(--foreground);
-  font-family: Arial, Helvetica, sans-serif;
+/*
+ * The one piece of motion on the site: ranking rows move to their new
+ * position when the user changes a weight, so the change is legible as a
+ * change rather than a redraw.
+ */
+@layer utilities {
+  .rank-row {
+    transition: transform 320ms cubic-bezier(0.2, 0, 0, 1);
+  }
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    animation-duration: 0.01ms !important;
+    transition-duration: 0.01ms !important;
+  }
+}
+
+@media print {
+  /* The memo is printed and handed to a client; the app chrome is not. */
+  .no-print {
+    display: none !important;
+  }
+
+  html,
+  body {
+    background: #fff;
+    color: #000;
+  }
+
+  .plan {
+    border-color: #000;
+    background: #fff;
+  }
+
+  @page {
+    size: A4;
+    margin: 16mm;
+  }
 }
