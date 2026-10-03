@@ -241,6 +241,14 @@ export interface FeedConfig {
 export const NEWS_FEEDS: FeedConfig[] = [
   { key: "loadstar", name: "The Loadstar", url: "https://theloadstar.com/feed/" },
   { key: "gcaptain", name: "gCaptain", url: "https://gcaptain.com/feed/" },
+  {
+    key: "maritime-executive",
+    name: "The Maritime Executive",
+    // Not the URL the site's own nav implies (.../rss and .../feed both
+    // 404) — found by checking what actually serves a feed: this one is an
+    // Atom feed, not RSS, but rss-parser reads both formats the same way.
+    url: "https://www.maritime-executive.com/articles.rss",
+  },
 ];
 
 /** How many items to keep per feed per run. */
@@ -255,7 +263,10 @@ export const MAX_ITEMS_PER_FEED = 40;
  * sells it commercially rather than publishing it freely. BDRY (a traded
  * ETF) already stood in as a correlated proxy; WTI and Brent crude are
  * tracked alongside it because bunker fuel is a direct, major cost input to
- * ocean freight rates, making crude a relevant signal in its own right.
+ * ocean freight rates, making crude a relevant signal in its own right. ZIM
+ * is a container carrier's own stock, which the market prices up or down on
+ * the same freight-rate outlook this whole dashboard tracks — a sentiment
+ * read from a different kind of source than an index or a commodity price.
  */
 export const MARKET_SYMBOLS = {
   /** A liquid dry-bulk shipping ETF — reliably quoted. */
@@ -264,4 +275,6 @@ export const MARKET_SYMBOLS = {
   WTI: "CL=F",
   /** Brent crude oil futures — the international benchmark. */
   BRENT: "BZ=F",
+  /** ZIM Integrated Shipping Services — a container carrier's own stock. */
+  ZIM: "ZIM",
 } as const;

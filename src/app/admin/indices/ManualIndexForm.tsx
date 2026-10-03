@@ -12,6 +12,7 @@ const INDEX_UNITS: Record<string, { unit: string; label: string }> = {
   BDRY: { unit: "USD", label: "USD" },
   WTI: { unit: "USD", label: "USD ต่อบาร์เรล" },
   BRENT: { unit: "USD", label: "USD ต่อบาร์เรล" },
+  ZIM: { unit: "USD", label: "USD ต่อหุ้น" },
 };
 
 /** Most recent Thursday — the day both WCI and SCFI publish. */

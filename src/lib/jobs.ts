@@ -131,7 +131,7 @@ export async function runNewsJob(): Promise<RunSummary> {
 /** Keyed registry, so a route can resolve "which job" from a URL segment. */
 export const JOBS = {
   "freight-index": { label: "ดัชนีค่าระวาง", run: runFreightIndexJob },
-  "market-sentiment": { label: "BDRY / น้ำมันดิบ", run: runMarketSentimentJob },
+  "market-sentiment": { label: "BDRY / น้ำมันดิบ / ZIM", run: runMarketSentimentJob },
   news: { label: "ข่าว RSS", run: runNewsJob },
 } as const;
 

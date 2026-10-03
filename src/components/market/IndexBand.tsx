@@ -3,14 +3,23 @@ import type { IndexSeries } from "@/lib/queries";
 import {
   formatDelta,
   formatIndexValue,
+  formatThb,
   indexLabel,
   relativeDaysTh,
   SOURCE_LABELS,
+  unitHasUsdValue,
   unitSuffix,
 } from "@/lib/format";
 import { routeLabel } from "@/lib/benchmark";
 
-export function IndexBand({ series }: { series: IndexSeries[] }) {
+export function IndexBand({
+  series,
+  usdThbRate,
+}: {
+  series: IndexSeries[];
+  /** `null` when Frankfurter couldn't be reached — the THB line just doesn't render. */
+  usdThbRate: number | null;
+}) {
   if (series.length === 0) {
     return (
       <section aria-label="ดัชนีค่าระวาง">
@@ -34,16 +43,30 @@ export function IndexBand({ series }: { series: IndexSeries[] }) {
 
       <div className="panel mt-4 grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-4">
         {series.map((item) => (
-          <IndexCell key={`${item.indexCode}-${item.routeCode}`} series={item} />
+          <IndexCell
+            key={`${item.indexCode}-${item.routeCode}`}
+            series={item}
+            usdThbRate={usdThbRate}
+          />
         ))}
       </div>
     </section>
   );
 }
 
-function IndexCell({ series }: { series: IndexSeries }) {
+function IndexCell({
+  series,
+  usdThbRate,
+}: {
+  series: IndexSeries;
+  usdThbRate: number | null;
+}) {
   const { metrics, unit } = series;
   const latest = metrics.latest;
+  const thbLine =
+    latest && usdThbRate && unitHasUsdValue(unit)
+      ? formatThb(latest.value * usdThbRate)
+      : null;
 
   return (
     <article className="border-line p-5 not-nth-[2n+1]:border-l sm:nth-[n+3]:border-t xl:not-nth-[4n+1]:border-l xl:nth-[n+3]:border-t-0">
@@ -66,7 +89,10 @@ function IndexCell({ series }: { series: IndexSeries }) {
         <Sparkline values={series.points.map((p) => p.value)} />
       </div>
 
-      <p className="mt-1.5 text-micro text-ink-faint">{unitSuffix(unit)}</p>
+      <p className="mt-1.5 text-micro text-ink-faint">
+        {unitSuffix(unit)}
+        {thbLine && <span className="ml-1.5">· {thbLine}</span>}
+      </p>
 
       <dl className="mt-4 flex gap-x-7 border-t border-line pt-3 text-small">
         <div className="flex items-baseline gap-2">

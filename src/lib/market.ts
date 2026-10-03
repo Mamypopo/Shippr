@@ -97,6 +97,7 @@ export async function fetchMarketSentiment(lookbackDays = 90): Promise<SymbolOut
     { symbol: MARKET_SYMBOLS.BDRY, indexCode: "BDRY", unit: "USD" },
     { symbol: MARKET_SYMBOLS.WTI, indexCode: "WTI", unit: "USD" },
     { symbol: MARKET_SYMBOLS.BRENT, indexCode: "BRENT", unit: "USD" },
+    { symbol: MARKET_SYMBOLS.ZIM, indexCode: "ZIM", unit: "USD" },
   ];
 
   const settled = await Promise.allSettled(

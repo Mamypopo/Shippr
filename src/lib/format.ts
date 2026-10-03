@@ -25,6 +25,16 @@ export function formatUsd(value: number): string {
   return `$${Math.round(value).toLocaleString("en-US")}`;
 }
 
+/** "≈ 123,000 บาท" — shown under a USD figure, never in place of it. */
+export function formatThb(value: number): string {
+  return `≈ ${Math.round(value).toLocaleString("th-TH")} บาท`;
+}
+
+/** Only WCI's dollars-per-container and the raw USD readings have a THB reading worth showing; SCFI is a points index, not a price. */
+export function unitHasUsdValue(unit: string): boolean {
+  return unit === "USD_PER_FEU" || unit === "USD";
+}
+
 /** Thai short date, e.g. "2 ต.ค." */
 export function thaiShortDate(date: Date): string {
   return new Intl.DateTimeFormat("th-TH", { day: "numeric", month: "short" }).format(date);
@@ -52,6 +62,7 @@ export const INDEX_LABELS: Record<string, string> = {
   BDRY: "BDRY ETF",
   WTI: "WTI Crude Oil",
   BRENT: "Brent Crude Oil",
+  ZIM: "ZIM (หุ้นสายเรือ)",
 };
 
 export function indexLabel(code: string): string {

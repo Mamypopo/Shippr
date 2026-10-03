@@ -6,6 +6,7 @@ import { DisruptionList } from "@/components/news/DisruptionList";
 import { PortBayPlan } from "@/components/ports/PortBayPlan";
 import { WindyEmbed } from "@/components/ports/WindyEmbed";
 import { formatDelta, formatIndexValue, indexLabel, thaiFullDate, unitSuffix } from "@/lib/format";
+import { fetchUsdThbRate } from "@/lib/fx";
 import {
   countRecentAlerts,
   getAllIndexSeries,
@@ -21,12 +22,13 @@ import { routeLabel } from "@/lib/benchmark";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [series, ports, news, alertCount7d, topAlert] = await Promise.all([
+  const [series, ports, news, alertCount7d, topAlert, usdThbRate] = await Promise.all([
     getAllIndexSeries(),
     getPortSnapshots(),
     getRecentNews(20),
     countRecentAlerts(7),
     getTopAlert(7),
+    fetchUsdThbRate(),
   ]);
 
   const summary = buildMarketSummary({
@@ -56,7 +58,7 @@ export default async function DashboardPage() {
           reads as a shape before it reads as data. */}
       <PortBayPlan ports={ports} />
 
-      <IndexBand series={series} />
+      <IndexBand series={series} usdThbRate={usdThbRate} />
 
       <div className="grid grid-cols-1 gap-4 lg:grid-cols-[1.35fr_1fr]">
         <DisruptionList items={news} />

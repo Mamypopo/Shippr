@@ -20,6 +20,7 @@ enum IndexCode {
   BDRY // Breakwave Dry Bulk Shipping ETF
   WTI // WTI crude oil futures — proxy for bunker fuel cost
   BRENT // Brent crude oil futures — proxy for bunker fuel cost
+  ZIM // ZIM Integrated Shipping Services — carrier stock, sentiment proxy
 }
 
 enum IndexUnit {

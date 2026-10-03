@@ -17,7 +17,7 @@ import {
   type ScrapeTargetConfig,
 } from "./scraper-config";
 
-export type IndexCodeKey = "WCI" | "SCFI" | "BDRY" | "WTI" | "BRENT";
+export type IndexCodeKey = "WCI" | "SCFI" | "BDRY" | "WTI" | "BRENT" | "ZIM";
 export type IndexUnitKey = "USD_PER_FEU" | "POINTS" | "USD";
 
 export interface ParsedIndex {
