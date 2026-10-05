@@ -12,6 +12,7 @@ import {
 import { CARGO_PRESETS, type PresetKey } from "@/lib/ahp-presets";
 import { compareToMarket, ROUTE_LABELS, type BenchmarkResult } from "@/lib/benchmark";
 import { perFeuRate, quotesToAlternatives } from "@/lib/cost";
+import type { CarrierStats } from "@/lib/booking-stats";
 import { CarrierQuoteForm, emptyQuote, type QuoteDraft } from "./CarrierQuoteForm";
 import { CarrierCriterionChart } from "./CarrierCriterionChart";
 import { ConsistencyBadge } from "./ConsistencyBadge";
@@ -35,9 +36,11 @@ export interface MarketBenchmark {
 export function DecisionWorkspace({
   benchmark,
   availableRoutes,
+  carrierHistory,
 }: {
   benchmark: MarketBenchmark | null;
   availableRoutes: string[];
+  carrierHistory: Record<string, CarrierStats>;
 }) {
   const router = useRouter();
 
@@ -192,6 +195,7 @@ export function DecisionWorkspace({
 
       <CarrierQuoteForm
         quotes={quotes}
+        history={carrierHistory}
         onChange={handleQuoteChange}
         onRemove={handleRemove}
         onAdd={handleAdd}

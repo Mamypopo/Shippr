@@ -126,3 +126,16 @@ export function assertKnownCriteria(pairwise: Record<string, number>): string[] 
 
   return unknown;
 }
+
+export const carrierBookingSchema = z
+  .object({
+    carrierName: z.string().trim().min(1, "ใส่ชื่อสายเรือ").max(120),
+    bookedOn: z.coerce.date(),
+    confirmedAt: z.coerce.date().nullish(),
+    expectedArrival: z.coerce.date().nullish(),
+    arrivedAt: z.coerce.date().nullish(),
+  })
+  .refine((b) => !b.confirmedAt || b.confirmedAt >= b.bookedOn, {
+    message: "วันยืนยันต้องไม่ก่อนวันจอง",
+    path: ["confirmedAt"],
+  });

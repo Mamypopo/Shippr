@@ -5,6 +5,7 @@
  * downstream has to know Prisma returns `Decimal`.
  */
 
+import { computeCarrierStats, type CarrierStats } from "./booking-stats";
 import { prisma, toNumber } from "./db";
 import { computeMetrics, type IndexMetrics, type IndexPoint } from "./metrics";
 import { riskLevelForWaitDays, type RiskLevelKey } from "./risk";
@@ -240,4 +241,12 @@ export async function getTrackedVessels(): Promise<TrackedVesselView[]> {
         : null,
     };
   });
+}
+
+/** Measured confirmation speed and on-time rate per carrier, keyed by normalised name. */
+export async function getCarrierBookingStats(): Promise<Map<string, CarrierStats>> {
+  const bookings = await prisma.carrierBooking.findMany({
+    select: { carrierName: true, bookedOn: true, confirmedAt: true, expectedArrival: true, arrivedAt: true },
+  });
+  return computeCarrierStats(bookings);
 }

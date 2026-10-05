@@ -1,5 +1,6 @@
 "use client";
 
+import { carrierKey, type CarrierStats } from "@/lib/booking-stats";
 import { computeCost, type QuoteInput } from "@/lib/cost";
 import { formatUsd } from "@/lib/format";
 
@@ -38,11 +39,13 @@ export function emptyQuote(index: number): QuoteDraft {
  */
 export function CarrierQuoteForm({
   quotes,
+  history,
   onChange,
   onRemove,
   onAdd,
 }: {
   quotes: QuoteDraft[];
+  history: Record<string, CarrierStats>;
   onChange: (id: string, patch: Partial<QuoteDraft>) => void;
   onRemove: (id: string) => void;
   onAdd: () => void;
@@ -61,6 +64,7 @@ export function CarrierQuoteForm({
             quote={quote}
             index={index}
             canRemove={quotes.length > 2}
+            history={history[carrierKey(quote.carrierName)] ?? null}
             onChange={onChange}
             onRemove={onRemove}
           />
@@ -86,16 +90,19 @@ function QuoteColumn({
   quote,
   index,
   canRemove,
+  history,
   onChange,
   onRemove,
 }: {
   quote: QuoteDraft;
   index: number;
   canRemove: boolean;
+  history: CarrierStats | null;
   onChange: (id: string, patch: Partial<QuoteDraft>) => void;
   onRemove: (id: string) => void;
 }) {
   const cost = computeCost(quote);
+  const hasHistory = history !== null && (history.onTimePct !== null || history.avgConfirmHours !== null);
 
   return (
     <article className="border-t border-line p-4 first:border-t-0 md:border-l md:nth-[2n+1]:border-l-0 xl:nth-[2n+1]:border-l xl:nth-[3n+1]:border-l-0">
@@ -202,6 +209,34 @@ function QuoteColumn({
           />
         )}
       </FieldGroup>
+
+      {hasHistory && history && (
+        <div className="mt-2 border-l-2 border-line pl-2.5 text-micro leading-relaxed text-ink-soft">
+          <p>
+            จากประวัติจริง{" "}
+            {history.onTimePct !== null && (
+              <>ตรงเวลา <span className="fig">{history.onTimePct.toFixed(0)}%</span> ({history.arrivalSample} ครั้ง) </>
+            )}
+            {history.avgConfirmHours !== null && (
+              <>ยืนยันเฉลี่ย <span className="fig">{history.avgConfirmHours.toFixed(1)}</span> ชม. ({history.confirmedSample} ครั้ง)</>
+            )}
+          </p>
+          <button
+            type="button"
+            onClick={() =>
+              onChange(quote.id, {
+                ...(history.onTimePct !== null ? { onTimePct: Math.round(history.onTimePct) } : {}),
+                ...(history.avgConfirmHours !== null
+                  ? { bookingSlaHours: Math.max(1, Math.round(history.avgConfirmHours)) }
+                  : {}),
+              })
+            }
+            className="mt-1 underline underline-offset-2 hover:text-ink"
+          >
+            ใช้ค่าจากประวัตินี้
+          </button>
+        </div>
+      )}
 
       <FieldGroup title="ความตรงต่อเวลา">
         <NumberField

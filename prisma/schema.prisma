@@ -317,6 +317,29 @@ model VesselPosition {
   @@map("vessel_position")
 }
 
+/// A booking actually placed with a carrier. Records the real timeline so the
+/// AHP comparison can use measured confirmation speed and on-time rate, not
+/// guesses typed in from memory.
+model CarrierBooking {
+  id              String    @id @default(cuid())
+  /// Matched case-insensitively against the carrier name typed into a quote.
+  carrierName     String
+  bookedOn        DateTime  @db.Date
+  /// When the carrier confirmed the booking. Null while still waiting.
+  confirmedAt     DateTime?
+  /// Agreed arrival date at the destination port.
+  expectedArrival DateTime? @db.Date
+  /// Actual arrival date. Null until the vessel has arrived.
+  arrivedAt       DateTime? @db.Date
+  enteredById     String?
+  createdAt       DateTime  @default(now())
+
+  enteredBy UserProfile? @relation(fields: [enteredById], references: [id], onDelete: SetNull)
+
+  @@index([carrierName])
+  @@map("carrier_booking")
+}
+
 model UserProfile {
   id           String   @id @default(cuid())
   /// Lowercase, unique. The only thing a user types to identify themselves.
@@ -337,11 +360,12 @@ model UserProfile {
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
-  sessions       Session[]
-  decisions      AHPDecisionLog[]
-  freightEntries FreightIndex[]
-  portEntries    PortStatus[]
-  trackedVessels TrackedVessel[]
+  sessions        Session[]
+  decisions       AHPDecisionLog[]
+  freightEntries  FreightIndex[]
+  portEntries     PortStatus[]
+  trackedVessels  TrackedVessel[]
+  carrierBookings CarrierBooking[]
 
   @@map("user_profile")
 }

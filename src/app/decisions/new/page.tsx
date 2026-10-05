@@ -1,7 +1,7 @@
 import { DecisionWorkspace } from "@/components/ahp/DecisionWorkspace";
 import { ROUTE_CODES } from "@/lib/benchmark";
 import { prisma } from "@/lib/db";
-import { getBenchmarkForRoute } from "@/lib/queries";
+import { getBenchmarkForRoute, getCarrierBookingStats } from "@/lib/queries";
 import { thaiShortDate } from "@/lib/format";
 
 export const dynamic = "force-dynamic";
@@ -11,13 +11,14 @@ export const metadata = {
 };
 
 export default async function NewDecisionPage() {
-  const [benchmark, lanes] = await Promise.all([
+  const [benchmark, lanes, bookingStats] = await Promise.all([
     getBenchmarkForRoute("COMPOSITE"),
     prisma.freightIndex.findMany({
       where: { indexCode: "WCI" },
       distinct: ["routeCode"],
       select: { routeCode: true },
     }),
+    getCarrierBookingStats(),
   ]);
 
   // Offer the lanes we actually hold a benchmark for first, then the rest of
@@ -46,6 +47,7 @@ export default async function NewDecisionPage() {
             : null
         }
         availableRoutes={availableRoutes}
+        carrierHistory={Object.fromEntries(bookingStats)}
       />
     </div>
   );

@@ -9,6 +9,7 @@ const NAV = [
   { href: "/decisions", label: "การตัดสินใจ" },
   { href: "/admin/indices", label: "กรอกข้อมูล" },
   { href: "/admin/vessels", label: "ติดตามเรือ" },
+  { href: "/admin/bookings", label: "การจอง" },
 ];
 
 export async function SiteHeader() {
