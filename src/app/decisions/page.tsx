@@ -15,6 +15,7 @@ export default async function DecisionsPage() {
     select: {
       id: true,
       title: true,
+      caseId: true,
       winnerCarrier: true,
       routeCode: true,
       consistencyRatio: true,
@@ -60,6 +61,7 @@ export default async function DecisionsPage() {
                   <div className="min-w-0">
                     <p className="text-base font-medium">{decision.title}</p>
                     <p className="mt-1 flex flex-wrap gap-x-4 text-micro text-ink-faint">
+                      {decision.caseId && <span className="fig">{decision.caseId}</span>}
                       <span>เลือก {decision.winnerCarrier || "—"}</span>
                       <span>{routeLabel(decision.routeCode)}</span>
                       <span className="fig">{decision._count.quotes} สายเรือ</span>

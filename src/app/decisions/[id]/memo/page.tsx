@@ -4,7 +4,11 @@ import { CRITERIA, CRITERION_LABELS, type CriterionKey, type RankedAlternative }
 import { BENCHMARK_VERDICT_LABELS, routeLabel } from "@/lib/benchmark";
 import { prisma, toNumber } from "@/lib/db";
 import { formatUsd, thaiFullDate } from "@/lib/format";
+import type { MarketSituation } from "@/lib/market-situation";
+import { LEVEL_LABELS, type Level } from "@/lib/market-situation";
+import type { RecommendationResult } from "@/lib/recommendation";
 import type { SummaryBullet, SummaryTone } from "@/lib/summary";
+import { MarketSituationPanel } from "@/components/market/MarketSituationPanel";
 import { PrintButton } from "./PrintButton";
 
 const TONE_COLOR: Record<SummaryTone, string> = {
@@ -12,6 +16,19 @@ const TONE_COLOR: Record<SummaryTone, string> = {
   positive: "var(--color-ok)",
   warning: "var(--color-warn)",
   critical: "var(--color-bad)",
+};
+
+function levelColor(level: Level): string {
+  if (level === "HIGH") return "var(--color-bad)";
+  if (level === "LOW") return "var(--color-ok)";
+  return "var(--color-ink-faint)";
+}
+
+const SCENARIO_LABELS: Record<string, string> = {
+  NORMAL: "Normal Market",
+  PEAK_SEASON: "Peak Season",
+  GEOPOLITICAL_DISRUPTION: "Geopolitical Disruption",
+  WEATHER_DISRUPTION: "Weather Disruption",
 };
 
 export const dynamic = "force-dynamic";
@@ -43,33 +60,22 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
     marketBullets?: SummaryBullet[];
     alertCount7d?: number;
     topAlertHeadline?: string | null;
+    situation?: MarketSituation;
+    recommendation?: RecommendationResult;
   } | null;
 
   const winner = ranking[0];
   const runnerUp = ranking[1];
 
-  // Risk worth a reader's attention: active disruption news and the winning
-  // carrier's own capacity-cut history, both already frozen in the snapshot
-  // or on the stored quote — nothing here needed a new place to record data.
-  const winnerQuote = decision.quotes.find((q) => q.carrierName === winner?.label);
-  const riskNotes: string[] = [];
-  if (snapshot?.topAlertHeadline) {
-    riskNotes.push(
-      `ข่าวความเสี่ยงล่าสุด ณ วันที่บันทึก: "${snapshot.topAlertHeadline}"${
-        snapshot.alertCount7d ? ` (รวม ${snapshot.alertCount7d} ข่าวระดับแจ้งเตือนใน 7 วันก่อนหน้า)` : ""
-      }`,
-    );
-  }
-  if (winnerQuote && winnerQuote.blankSailingsPerQuarter > 0) {
-    riskNotes.push(
-      `${winner?.label} มีประวัติยกเลิกเที่ยวเรือ ${winnerQuote.blankSailingsPerQuarter} ครั้งต่อไตรมาส — ตารางเรืออาจคลาดเคลื่อนได้`,
-    );
-  }
-  if (winnerQuote && !winnerQuote.isDirect) {
-    riskNotes.push(
-      `${winner?.label} ต้องถ่ายลำ ${winnerQuote.transshipmentCount} ครั้ง ซึ่งเพิ่มจุดที่อาจล่าช้าเทียบกับเรือตรง`,
-    );
-  }
+  const hasCaseInfo =
+    decision.caseId ||
+    decision.originLocode ||
+    decision.destLocode ||
+    decision.equipment ||
+    decision.cargoDescription ||
+    decision.quantity ||
+    decision.requiredEtd ||
+    decision.scenario;
 
   return (
     <article className="mx-auto max-w-[52rem] px-6 py-8 print:px-0 print:py-0">
@@ -86,24 +92,78 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         </p>
       </header>
 
-      {snapshot?.marketBullets && snapshot.marketBullets.length > 0 && (
+      {hasCaseInfo && (
+        <section className="mt-6">
+          <h2 className="text-base">Decision Case</h2>
+          <dl className="mt-2 grid max-w-[68ch] grid-cols-2 gap-x-4 gap-y-2 text-small sm:grid-cols-4">
+            {decision.caseId && (
+              <div>
+                <dt className="text-micro text-ink-faint">Case ID</dt>
+                <dd className="fig mt-0.5">{decision.caseId}</dd>
+              </div>
+            )}
+            {(decision.originLocode || decision.destLocode) && (
+              <div className="col-span-2">
+                <dt className="text-micro text-ink-faint">Route</dt>
+                <dd className="mt-0.5">
+                  {decision.originLocode ?? "—"} → {decision.destLocode ?? "—"}
+                </dd>
+              </div>
+            )}
+            {(decision.equipment || decision.quantity) && (
+              <div>
+                <dt className="text-micro text-ink-faint">Equipment</dt>
+                <dd className="mt-0.5">
+                  {decision.equipment ?? "—"}
+                  {decision.quantity && ` / ${decision.quantity} ตู้`}
+                </dd>
+              </div>
+            )}
+            {decision.cargoDescription && (
+              <div>
+                <dt className="text-micro text-ink-faint">Cargo</dt>
+                <dd className="mt-0.5">{decision.cargoDescription}</dd>
+              </div>
+            )}
+            {decision.requiredEtd && (
+              <div>
+                <dt className="text-micro text-ink-faint">Required ETD</dt>
+                <dd className="fig mt-0.5">{thaiFullDate(decision.requiredEtd)}</dd>
+              </div>
+            )}
+            {decision.scenario && (
+              <div>
+                <dt className="text-micro text-ink-faint">Scenario</dt>
+                <dd className="mt-0.5">{SCENARIO_LABELS[decision.scenario] ?? decision.scenario}</dd>
+              </div>
+            )}
+          </dl>
+        </section>
+      )}
+
+      {snapshot?.situation && (
         <section className="mt-6">
           <h2 className="text-base">สถานการณ์ตลาด ณ วันที่บันทึก</h2>
-          <ul className="mt-2 max-w-[68ch] text-small leading-relaxed">
-            {snapshot.marketBullets.map((bullet) => (
-              <li key={bullet.id} className="mt-1 flex gap-2">
-                <span
-                  aria-hidden
-                  className="mt-[0.5em] h-1.5 w-1.5 shrink-0 rounded-full"
-                  style={{ background: TONE_COLOR[bullet.tone] }}
-                />
-                <span>{bullet.text}</span>
-              </li>
-            ))}
-          </ul>
+          <div className="mt-2 max-w-[68ch]">
+            <MarketSituationPanel situation={snapshot.situation} />
+          </div>
+
+          {snapshot.marketBullets && snapshot.marketBullets.length > 0 && (
+            <ul className="mt-3 max-w-[68ch] text-small leading-relaxed">
+              {snapshot.marketBullets.map((bullet) => (
+                <li key={bullet.id} className="mt-1 flex gap-2">
+                  <span
+                    aria-hidden
+                    className="mt-[0.5em] h-1.5 w-1.5 shrink-0 rounded-full"
+                    style={{ background: TONE_COLOR[bullet.tone] }}
+                  />
+                  <span>{bullet.text}</span>
+                </li>
+              ))}
+            </ul>
+          )}
           <p className="mt-2 text-micro text-ink-faint">
-            สรุปจากกฎตายตัวเหนือข้อมูลดัชนี ท่าเรือ และข่าวที่มีอยู่จริง ไม่ใช่การเดา
-            และบันทึกไว้ ณ วันที่ตัดสินใจ — อ่านย้อนหลังภายหลังจะเห็นสถานการณ์ของวันนั้น ไม่ใช่วันนี้
+            บันทึกไว้ ณ วันที่ตัดสินใจ — อ่านย้อนหลังภายหลังจะเห็นสถานการณ์ของวันนั้น ไม่ใช่วันนี้
           </p>
         </section>
       )}
@@ -138,16 +198,34 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
         )}
       </section>
 
-      {riskNotes.length > 0 && (
+      {snapshot?.recommendation && winner && (
         <section className="mt-6">
-          <h2 className="text-base">ความเสี่ยงที่ควรพิจารณา</h2>
-          <ul className="mt-2 max-w-[68ch] text-small leading-relaxed text-ink-soft">
-            {riskNotes.map((note, i) => (
-              <li key={i} className="mt-1 border-l-2 border-line pl-2.5">
-                {note}
-              </li>
+          <h2 className="text-base">Recommendation + Risk Alert</h2>
+          <p className="mt-2 max-w-[68ch] text-small leading-relaxed text-ink-soft">
+            {snapshot.recommendation.reasons.length > 0
+              ? `${winner.label} ได้รับเลือกเพราะด้าน ${snapshot.recommendation.reasons.join(" และ ")} ดีกว่าคู่แข่งอันดับรองลงมาอย่างชัดเจน`
+              : runnerUp
+                ? `${winner.label} ได้คะแนนรวมสูงสุด โดยไม่มีเกณฑ์ใดเกณฑ์หนึ่งที่เหนือกว่าคู่แข่งอย่างชัดเจน — ผลต่างมาจากหลายเกณฑ์รวมกัน`
+                : `มีเพียงสายเรือเดียวในการเปรียบเทียบนี้`}
+          </p>
+
+          <dl className="mt-3 grid max-w-[68ch] grid-cols-2 gap-x-4 gap-y-2 sm:grid-cols-4">
+            {(
+              [
+                ["Freight Rate Risk", snapshot.recommendation.risk.freightRateRisk],
+                ["Capacity / Space Risk", snapshot.recommendation.risk.capacitySpaceRisk],
+                ["Transit Time Risk", snapshot.recommendation.risk.transitTimeRisk],
+                ["Schedule Risk", snapshot.recommendation.risk.scheduleRisk],
+              ] as const
+            ).map(([label, level]) => (
+              <div key={label}>
+                <dt className="text-micro text-ink-faint">{label}</dt>
+                <dd className="mt-0.5 text-small font-medium" style={{ color: levelColor(level) }}>
+                  {LEVEL_LABELS[level]}
+                </dd>
+              </div>
             ))}
-          </ul>
+          </dl>
         </section>
       )}
 

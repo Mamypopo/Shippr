@@ -13,7 +13,17 @@ import { CARGO_PRESETS, type PresetKey } from "@/lib/ahp-presets";
 import { compareToMarket, ROUTE_LABELS, type BenchmarkResult } from "@/lib/benchmark";
 import { perFeuRate, quotesToAlternatives } from "@/lib/cost";
 import type { CarrierStats } from "@/lib/booking-stats";
+import type { MarketImpact } from "@/lib/market-situation";
 import { CarrierQuoteForm, emptyQuote, type QuoteDraft } from "./CarrierQuoteForm";
+import { RecommendationPanel } from "./RecommendationPanel";
+
+const SCENARIO_OPTIONS = [
+  { value: "", label: "ไม่ระบุ" },
+  { value: "NORMAL", label: "Normal Market" },
+  { value: "PEAK_SEASON", label: "Peak Season" },
+  { value: "GEOPOLITICAL_DISRUPTION", label: "Geopolitical Disruption" },
+  { value: "WEATHER_DISRUPTION", label: "Weather Disruption" },
+] as const;
 import { CarrierCriterionChart } from "./CarrierCriterionChart";
 import { ConsistencyBadge } from "./ConsistencyBadge";
 import { PairwiseMatrix } from "./PairwiseMatrix";
@@ -37,16 +47,31 @@ export function DecisionWorkspace({
   benchmark,
   availableRoutes,
   carrierHistory,
+  marketImpact,
 }: {
   benchmark: MarketBenchmark | null;
   availableRoutes: string[];
   carrierHistory: Record<string, CarrierStats>;
+  marketImpact: MarketImpact;
 }) {
   const router = useRouter();
 
   const [title, setTitle] = useState("");
   const [routeCode, setRouteCode] = useState(benchmark?.routeCode ?? "COMPOSITE");
   const [notes, setNotes] = useState("");
+
+  // Decision Case — which shipment this comparison is actually for. All
+  // optional: the company has no fixed main lane, so every comparison is
+  // made per case, but a quick what-if with no real shipment yet should
+  // still save without filling these in.
+  const [caseId, setCaseId] = useState("");
+  const [originLocode, setOriginLocode] = useState("");
+  const [destLocode, setDestLocode] = useState("");
+  const [equipment, setEquipment] = useState("40HC");
+  const [cargoDescription, setCargoDescription] = useState("");
+  const [quantity, setQuantity] = useState("");
+  const [requiredEtd, setRequiredEtd] = useState("");
+  const [scenario, setScenario] = useState("");
   const [presetKey, setPresetKey] = useState<PresetKey | "CUSTOM">("BALANCED");
   const [pairwise, setPairwise] = useState<PairwiseInput>(CARGO_PRESETS.BALANCED.pairwise);
   const [quotes, setQuotes] = useState<QuoteDraft[]>([emptyQuote(0), emptyQuote(1)]);
@@ -115,6 +140,14 @@ export function DecisionWorkspace({
           presetKey: presetKey === "CUSTOM" ? null : presetKey,
           routeCode,
           notes: notes.trim() || null,
+          caseId: caseId.trim() || null,
+          originLocode: originLocode.trim() || null,
+          destLocode: destLocode.trim() || null,
+          equipment: equipment.trim() || null,
+          cargoDescription: cargoDescription.trim() || null,
+          quantity: quantity.trim() ? Number(quantity) : null,
+          requiredEtd: requiredEtd || null,
+          scenario: scenario || null,
           pairwise,
           quotes: readyQuotes.map((q) => ({
             carrierName: q.carrierName.trim(),
@@ -193,6 +226,105 @@ export function DecisionWorkspace({
         </p>
       </section>
 
+      <section className="panel px-4 py-4" aria-label="ระบุ Shipment">
+        <h2 className="text-base">Decision Case</h2>
+        <p className="mt-1 max-w-[62ch] text-micro leading-relaxed text-ink-faint">
+          บริษัทไม่ได้มีเส้นทางหลักทางเดียว แต่ละการเปรียบเทียบจึงผูกกับ shipment หนึ่งรายการ
+          ทุกช่องไม่บังคับ — เว้นว่างไว้ได้ถ้าแค่อยากลองเทียบราคาเฉยๆ
+        </p>
+
+        <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Case ID</span>
+            <input
+              type="text"
+              value={caseId}
+              onChange={(e) => setCaseId(e.target.value)}
+              placeholder="ปล่อยว่างให้ระบบตั้งให้ เช่น FF-001"
+              className="fig mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Origin</span>
+            <input
+              type="text"
+              value={originLocode}
+              onChange={(e) => setOriginLocode(e.target.value)}
+              placeholder="เช่น Laem Chabang"
+              className="mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Destination</span>
+            <input
+              type="text"
+              value={destLocode}
+              onChange={(e) => setDestLocode(e.target.value)}
+              placeholder="เช่น Rotterdam"
+              className="mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Equipment</span>
+            <input
+              type="text"
+              value={equipment}
+              onChange={(e) => setEquipment(e.target.value)}
+              placeholder="เช่น 40HC"
+              className="mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Cargo</span>
+            <input
+              type="text"
+              value={cargoDescription}
+              onChange={(e) => setCargoDescription(e.target.value)}
+              placeholder="เช่น เฟอร์นิเจอร์ไม้"
+              className="mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Quantity</span>
+            <input
+              type="number"
+              min={1}
+              value={quantity}
+              onChange={(e) => setQuantity(e.target.value)}
+              placeholder="เช่น 2 (ตู้)"
+              className="fig mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Required ETD</span>
+            <input
+              type="date"
+              value={requiredEtd}
+              onChange={(e) => setRequiredEtd(e.target.value)}
+              className="fig mt-1 w-full px-2 py-1.5 text-small"
+            />
+          </label>
+          <label className="block">
+            <span className="block text-micro text-ink-faint">Scenario</span>
+            <select
+              value={scenario}
+              onChange={(e) => setScenario(e.target.value)}
+              className="mt-1 w-full px-2 py-1.5 text-small"
+            >
+              {SCENARIO_OPTIONS.map((opt) => (
+                <option key={opt.value} value={opt.value}>
+                  {opt.label}
+                </option>
+              ))}
+            </select>
+          </label>
+        </div>
+        <p className="mt-3 text-micro text-ink-faint">
+          Scenario เป็นป้ายกำกับบริบทเท่านั้น ไม่เปลี่ยนน้ำหนักเกณฑ์ AHP ให้อัตโนมัติ —
+          ถ้าอยากปรับน้ำหนักจริงตามสถานการณ์ ใช้ preset ที่เมทริกซ์ด้านล่างแทน
+        </p>
+      </section>
+
       <CarrierQuoteForm
         quotes={quotes}
         history={carrierHistory}
@@ -226,6 +358,13 @@ export function DecisionWorkspace({
           />
         </div>
       </div>
+
+      <RecommendationPanel
+        ranking={result.ranking}
+        benchmarks={benchmarks}
+        quotes={readyQuotes}
+        marketImpact={marketImpact}
+      />
 
       <section className="panel px-4 py-4">
         <label className="block">

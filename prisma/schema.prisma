@@ -225,6 +225,20 @@ model AHPDecisionLog {
   /// Lane used to pick the market benchmark, e.g. SHA_RTM.
   routeCode    String?
 
+  /// Human-facing case reference, e.g. "FF-001". Auto-generated at save time
+  /// when left blank — there is no central shipment system this maps to, so
+  /// it is just a sequential label, not a foreign key into anything.
+  caseId           String?
+  /// e.g. "40HC" — the container type being shipped, distinct from a quote's
+  /// own containerType (which is what that specific carrier quoted for).
+  equipment        String?
+  cargoDescription String?
+  quantity         Int?
+  requiredEtd      DateTime? @db.Date
+  /// Free-text market-condition label (e.g. "PEAK_SEASON") attached to the
+  /// case for context only — deliberately never read by the AHP weighting.
+  scenario         String?
+
   /// Raw n x n Saaty matrix exactly as the user entered it.
   criteriaMatrix    Json
   /// Criterion key -> weight.

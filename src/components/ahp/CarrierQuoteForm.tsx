@@ -166,20 +166,25 @@ function QuoteColumn({
         />
       </FieldGroup>
 
-      {/* Making the credit visible is the point: it is why a dearer headline
-          rate can still be the cheaper booking. */}
-      <p className="mt-1 border-t border-line pt-2 text-micro text-ink-soft">
-        ต้นทุนรวม <span className="fig">{formatUsd(cost.grossCostUsd)}</span>
-        {cost.freeTimeCreditUsd > 0 && (
-          <>
-            {" "}
-            − free time <span className="fig">{formatUsd(cost.freeTimeCreditUsd)}</span> ={" "}
-            <span className="fig font-medium text-ink">
-              {formatUsd(cost.effectiveCostUsd)}
-            </span>
-          </>
-        )}
-      </p>
+      {/* Three separate numbers, not one subtraction equation — a minus sign
+          here read as if Free Time were a discount applied to the headline
+          rate, which made the AHP cost criterion look like it worked
+          differently than it does. It's still the same effective cost
+          feeding the ranking below; only the display changed. */}
+      <dl className="mt-1 grid grid-cols-3 gap-x-2 border-t border-line pt-2 text-micro text-ink-soft">
+        <div>
+          <dt className="text-ink-faint">ต้นทุน (Ocean + Local)</dt>
+          <dd className="fig mt-0.5">{formatUsd(cost.grossCostUsd)}</dd>
+        </div>
+        <div>
+          <dt className="text-ink-faint">มูลค่า Free Time</dt>
+          <dd className="fig mt-0.5">{formatUsd(cost.freeTimeCreditUsd)}</dd>
+        </div>
+        <div>
+          <dt className="text-ink-faint">ต้นทุนที่ใช้เปรียบเทียบ</dt>
+          <dd className="fig mt-0.5 font-medium text-ink">{formatUsd(cost.effectiveCostUsd)}</dd>
+        </div>
+      </dl>
 
       <FieldGroup title="ระยะเวลา">
         <NumberField

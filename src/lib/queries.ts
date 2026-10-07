@@ -7,6 +7,7 @@
 
 import { computeCarrierStats, type CarrierStats } from "./booking-stats";
 import { prisma, toNumber } from "./db";
+import type { MarketSituationInput } from "./market-situation";
 import { computeMetrics, type IndexMetrics, type IndexPoint } from "./metrics";
 import { riskLevelForWaitDays, type RiskLevelKey } from "./risk";
 import type { IndexCode } from "@/generated/prisma/enums";
@@ -249,4 +250,37 @@ export async function getCarrierBookingStats(): Promise<Map<string, CarrierStats
     select: { carrierName: true, bookedOn: true, confirmedAt: true, expectedArrival: true, arrivedAt: true },
   });
   return computeCarrierStats(bookings);
+}
+
+/** Inputs for `assessMarketSituation` — tagged-news counts plus the freight rate trend and port risk already shown elsewhere. */
+export async function getMarketSituationInputs(
+  routeCode = "COMPOSITE",
+  newsWindowDays = 14,
+): Promise<MarketSituationInput> {
+  const since = new Date(Date.now() - newsWindowDays * 24 * 60 * 60 * 1000);
+
+  const [wci, scfi, ports, recentFlagged] = await Promise.all([
+    getIndexSeries("WCI" as IndexCode, routeCode, 12),
+    getIndexSeries("SCFI" as IndexCode, "COMPOSITE", 12),
+    getPortSnapshots(),
+    prisma.newsFeedItem.findMany({
+      where: { publishedAt: { gte: since }, severity: { in: ["WATCH", "ALERT"] } },
+      select: { tags: true },
+    }),
+  ]);
+
+  const rate = wci ?? scfi;
+  const tagCount = (tag: string) => recentFlagged.filter((n) => n.tags.includes(tag as never)).length;
+
+  return {
+    rateWowPct: rate?.metrics.wowPct ?? null,
+    rateLabel: wci ? "Drewry WCI" : scfi ? "SCFI" : null,
+    portRiskLevels: ports.map((p) => p.riskLevel).filter((r): r is RiskLevelKey => r !== null),
+    newsCounts: {
+      geopolitics: tagCount("GEOPOLITICS"),
+      weather: tagCount("WEATHER"),
+      chokepoint: tagCount("CHOKEPOINT"),
+      capacity: tagCount("CAPACITY"),
+    },
+  };
 }

@@ -56,10 +56,25 @@ export const pairwiseSchema = z.record(z.string(), saatyValue);
 export const ahpEvaluateSchema = z.object({
   title: z.string().min(1, "Give the decision a title").max(200),
   presetKey: z.string().max(60).nullish(),
-  originLocode: z.string().max(10).nullish(),
-  destLocode: z.string().max(10).nullish(),
+  // Despite the field name (kept for compatibility with the column), this
+  // holds whatever the Decision Case form's Origin/Destination fields were
+  // given — a port name like "Laem Chabang", not necessarily a UN/LOCODE.
+  // The company ships between many lanes, not a fixed set of hub ports, so
+  // free text here is the right fit rather than a constrained code.
+  originLocode: z.string().max(100).nullish(),
+  destLocode: z.string().max(100).nullish(),
   routeCode: z.string().max(30).nullish(),
   notes: z.string().max(5_000).nullish(),
+
+  // Decision Case — which shipment this comparison is actually for. All
+  // optional: a quick what-if comparison with no real shipment yet should
+  // still save.
+  caseId: z.string().max(40).nullish(),
+  equipment: z.string().max(40).nullish(),
+  cargoDescription: z.string().max(200).nullish(),
+  quantity: z.number().int().min(1).max(10_000).nullish(),
+  requiredEtd: z.coerce.date().nullish(),
+  scenario: z.string().max(60).nullish(),
 
   pairwise: pairwiseSchema,
 

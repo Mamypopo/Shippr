@@ -1,17 +1,20 @@
 import { computeAHP } from "@/lib/ahp";
 import { isAuthFailure, requireAuth } from "@/lib/auth";
-import { compareToMarket, routeLabel } from "@/lib/benchmark";
+import { compareToMarket, routeLabel, type BenchmarkResult } from "@/lib/benchmark";
 import { perFeuRate, quotesToAlternatives, type QuoteInput } from "@/lib/cost";
 import { prisma } from "@/lib/db";
 import { indexLabel } from "@/lib/format";
+import { assessMarketSituation } from "@/lib/market-situation";
 import {
   countRecentAlerts,
   getAllIndexSeries,
   getBenchmarkForRoute,
+  getMarketSituationInputs,
   getPortSnapshots,
   getTopAlert,
   type IndexSeries,
 } from "@/lib/queries";
+import { buildRecommendation } from "@/lib/recommendation";
 import { buildMarketSummary } from "@/lib/summary";
 import { ahpEvaluateSchema, assertKnownCriteria, formatZodIssues } from "@/lib/validation";
 import type { Prisma } from "@/generated/prisma/client";
@@ -83,11 +86,12 @@ export async function POST(request: Request): Promise<Response> {
   // describe the market as it was on the day of the call, not as it is now.
   // Nothing here required new data entry — it's the same rule-based reading
   // of data already in the system (indices, port risk, disruption alerts).
-  const [allSeries, ports, alertCount7d, topAlert] = await Promise.all([
+  const [allSeries, ports, alertCount7d, topAlert, situationInputs] = await Promise.all([
     getAllIndexSeries(),
     getPortSnapshots(),
     countRecentAlerts(7),
     getTopAlert(7),
+    getMarketSituationInputs(payload.routeCode ?? "COMPOSITE"),
   ]);
   const marketBullets = buildMarketSummary({
     indices: allSeries.map((s) => ({
@@ -102,6 +106,22 @@ export async function POST(request: Request): Promise<Response> {
     alertCount7d,
     topAlertHeadline: topAlert?.title ?? null,
   });
+  // The structured bands (Demand/Supply/Freight Rate/...) and their Market
+  // Impact — the same classification the "Market Situation" panel on the
+  // new-decision page shows, frozen here for the same reason as everything
+  // else in this snapshot: the memo must describe the market as it was that
+  // day, not as it is when read later.
+  const situation = assessMarketSituation(situationInputs);
+
+  const benchmarkByQuoteId: Record<string, BenchmarkResult | null> = {};
+  for (const quote of quotes) {
+    benchmarkByQuoteId[quote.id] = benchmark
+      ? compareToMarket(perFeuRate(quote), benchmark.value, {
+          routeCode: benchmark.routeCode,
+          marketPeriodDate: benchmark.periodDate,
+        })
+      : null;
+  }
 
   const benchmarkSnapshot = {
     capturedAt: new Date().toISOString(),
@@ -114,15 +134,24 @@ export async function POST(request: Request): Promise<Response> {
       ? quotes.map((quote) => ({
           id: quote.id,
           carrierName: quote.carrierName,
-          ...compareToMarket(perFeuRate(quote), benchmark.value, {
-            routeCode: benchmark.routeCode,
-            marketPeriodDate: benchmark.periodDate,
-          }),
+          ...benchmarkByQuoteId[quote.id],
         }))
       : [],
     marketBullets,
     alertCount7d,
     topAlertHeadline: topAlert?.title ?? null,
+    situation,
+    recommendation: buildRecommendation({
+      ranking: result.ranking,
+      benchmarks: benchmarkByQuoteId,
+      quotes: quotes.map((q) => ({
+        id: q.id,
+        blankSailingsPerQuarter: q.blankSailingsPerQuarter,
+        isDirect: q.isDirect,
+        transitDays: q.transitDays,
+      })),
+      marketImpact: situation.impact,
+    }),
   };
 
   const winner = result.ranking[0];
@@ -136,6 +165,13 @@ export async function POST(request: Request): Promise<Response> {
    * the user's work and the reason it was rejected. `isConsistent` is stored
    * alongside it, and the memo view marks such a decision clearly.
    */
+  // A case reference left blank gets a sequential label rather than staying
+  // empty — "FF-001" is more useful in a list of decisions than a blank
+  // column, and nobody has to think one up for a quick comparison.
+  const caseId =
+    payload.caseId?.trim() ||
+    `FF-${String((await prisma.aHPDecisionLog.count()) + 1).padStart(3, "0")}`;
+
   const decision = await prisma.aHPDecisionLog.create({
     data: {
       userId: auth.user.id,
@@ -145,6 +181,13 @@ export async function POST(request: Request): Promise<Response> {
       destLocode: payload.destLocode ?? null,
       routeCode: payload.routeCode ?? null,
       notes: payload.notes ?? null,
+
+      caseId,
+      equipment: payload.equipment ?? null,
+      cargoDescription: payload.cargoDescription ?? null,
+      quantity: payload.quantity ?? null,
+      requiredEtd: payload.requiredEtd ?? null,
+      scenario: payload.scenario ?? null,
 
       criteriaMatrix: result.matrix as unknown as Prisma.InputJsonValue,
       criteriaWeights: result.weights as unknown as Prisma.InputJsonValue,

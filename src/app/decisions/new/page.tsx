@@ -1,8 +1,11 @@
+import { DecisionFlowStepper } from "@/components/ahp/DecisionFlowStepper";
 import { DecisionWorkspace } from "@/components/ahp/DecisionWorkspace";
+import { MarketSituationPanel } from "@/components/market/MarketSituationPanel";
 import { ROUTE_CODES } from "@/lib/benchmark";
 import { prisma } from "@/lib/db";
-import { getBenchmarkForRoute, getCarrierBookingStats } from "@/lib/queries";
 import { thaiShortDate } from "@/lib/format";
+import { assessMarketSituation } from "@/lib/market-situation";
+import { getBenchmarkForRoute, getCarrierBookingStats, getMarketSituationInputs } from "@/lib/queries";
 
 export const dynamic = "force-dynamic";
 
@@ -11,7 +14,7 @@ export const metadata = {
 };
 
 export default async function NewDecisionPage() {
-  const [benchmark, lanes, bookingStats] = await Promise.all([
+  const [benchmark, lanes, bookingStats, situationInputs] = await Promise.all([
     getBenchmarkForRoute("COMPOSITE"),
     prisma.freightIndex.findMany({
       where: { indexCode: "WCI" },
@@ -19,7 +22,10 @@ export default async function NewDecisionPage() {
       select: { routeCode: true },
     }),
     getCarrierBookingStats(),
+    getMarketSituationInputs(),
   ]);
+
+  const situation = assessMarketSituation(situationInputs);
 
   // Offer the lanes we actually hold a benchmark for first, then the rest of
   // the known codes so a quote on a new lane can still be recorded.
@@ -36,6 +42,10 @@ export default async function NewDecisionPage() {
         </p>
       </header>
 
+      <DecisionFlowStepper />
+
+      <MarketSituationPanel situation={situation} />
+
       <DecisionWorkspace
         benchmark={
           benchmark
@@ -48,6 +58,7 @@ export default async function NewDecisionPage() {
         }
         availableRoutes={availableRoutes}
         carrierHistory={Object.fromEntries(bookingStats)}
+        marketImpact={situation.impact}
       />
     </div>
   );
