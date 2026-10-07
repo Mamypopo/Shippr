@@ -35,7 +35,7 @@ export const CRITERION_DIRECTION: Record<CriterionKey, "min" | "max"> = {
 };
 
 export const CRITERION_LABELS: Record<CriterionKey, { en: string; th: string }> = {
-  cost: { en: "Cost", th: "ต้นทุนรวม" },
+  cost: { en: "Cost", th: "ต้นทุน" },
   transitTime: { en: "Transit Time", th: "ระยะเวลาขนส่ง" },
   reliability: { en: "Schedule Reliability", th: "ความตรงต่อเวลา" },
   availability: { en: "Space & Equipment", th: "ระวาง/ตู้คอนเทนเนอร์" },
