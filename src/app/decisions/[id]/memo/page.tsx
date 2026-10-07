@@ -4,7 +4,15 @@ import { CRITERIA, CRITERION_LABELS, type CriterionKey, type RankedAlternative }
 import { BENCHMARK_VERDICT_LABELS, routeLabel } from "@/lib/benchmark";
 import { prisma, toNumber } from "@/lib/db";
 import { formatUsd, thaiFullDate } from "@/lib/format";
+import type { SummaryBullet, SummaryTone } from "@/lib/summary";
 import { PrintButton } from "./PrintButton";
+
+const TONE_COLOR: Record<SummaryTone, string> = {
+  neutral: "var(--color-ink-faint)",
+  positive: "var(--color-ok)",
+  warning: "var(--color-warn)",
+  critical: "var(--color-bad)",
+};
 
 export const dynamic = "force-dynamic";
 
@@ -32,10 +40,36 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
     marketPeriodDate?: string;
     routeCode?: string;
     quotes?: Array<{ carrierName: string; deltaPct?: number; verdict?: string }>;
+    marketBullets?: SummaryBullet[];
+    alertCount7d?: number;
+    topAlertHeadline?: string | null;
   } | null;
 
   const winner = ranking[0];
   const runnerUp = ranking[1];
+
+  // Risk worth a reader's attention: active disruption news and the winning
+  // carrier's own capacity-cut history, both already frozen in the snapshot
+  // or on the stored quote — nothing here needed a new place to record data.
+  const winnerQuote = decision.quotes.find((q) => q.carrierName === winner?.label);
+  const riskNotes: string[] = [];
+  if (snapshot?.topAlertHeadline) {
+    riskNotes.push(
+      `ข่าวความเสี่ยงล่าสุด ณ วันที่บันทึก: "${snapshot.topAlertHeadline}"${
+        snapshot.alertCount7d ? ` (รวม ${snapshot.alertCount7d} ข่าวระดับแจ้งเตือนใน 7 วันก่อนหน้า)` : ""
+      }`,
+    );
+  }
+  if (winnerQuote && winnerQuote.blankSailingsPerQuarter > 0) {
+    riskNotes.push(
+      `${winner?.label} มีประวัติยกเลิกเที่ยวเรือ ${winnerQuote.blankSailingsPerQuarter} ครั้งต่อไตรมาส — ตารางเรืออาจคลาดเคลื่อนได้`,
+    );
+  }
+  if (winnerQuote && !winnerQuote.isDirect) {
+    riskNotes.push(
+      `${winner?.label} ต้องถ่ายลำ ${winnerQuote.transshipmentCount} ครั้ง ซึ่งเพิ่มจุดที่อาจล่าช้าเทียบกับเรือตรง`,
+    );
+  }
 
   return (
     <article className="mx-auto max-w-[52rem] px-6 py-8 print:px-0 print:py-0">
@@ -51,6 +85,28 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
           <span className="fig">รหัส {id.slice(0, 8)}</span>
         </p>
       </header>
+
+      {snapshot?.marketBullets && snapshot.marketBullets.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-base">สถานการณ์ตลาด ณ วันที่บันทึก</h2>
+          <ul className="mt-2 max-w-[68ch] text-small leading-relaxed">
+            {snapshot.marketBullets.map((bullet) => (
+              <li key={bullet.id} className="mt-1 flex gap-2">
+                <span
+                  aria-hidden
+                  className="mt-[0.5em] h-1.5 w-1.5 shrink-0 rounded-full"
+                  style={{ background: TONE_COLOR[bullet.tone] }}
+                />
+                <span>{bullet.text}</span>
+              </li>
+            ))}
+          </ul>
+          <p className="mt-2 text-micro text-ink-faint">
+            สรุปจากกฎตายตัวเหนือข้อมูลดัชนี ท่าเรือ และข่าวที่มีอยู่จริง ไม่ใช่การเดา
+            และบันทึกไว้ ณ วันที่ตัดสินใจ — อ่านย้อนหลังภายหลังจะเห็นสถานการณ์ของวันนั้น ไม่ใช่วันนี้
+          </p>
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="text-base">ข้อสรุป</h2>
@@ -81,6 +137,19 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
           </p>
         )}
       </section>
+
+      {riskNotes.length > 0 && (
+        <section className="mt-6">
+          <h2 className="text-base">ความเสี่ยงที่ควรพิจารณา</h2>
+          <ul className="mt-2 max-w-[68ch] text-small leading-relaxed text-ink-soft">
+            {riskNotes.map((note, i) => (
+              <li key={i} className="mt-1 border-l-2 border-line pl-2.5">
+                {note}
+              </li>
+            ))}
+          </ul>
+        </section>
+      )}
 
       <section className="mt-6">
         <h2 className="text-base">อันดับและคะแนน</h2>

@@ -1,11 +1,27 @@
 import { computeAHP } from "@/lib/ahp";
 import { isAuthFailure, requireAuth } from "@/lib/auth";
+import { compareToMarket, routeLabel } from "@/lib/benchmark";
 import { perFeuRate, quotesToAlternatives, type QuoteInput } from "@/lib/cost";
-import { compareToMarket } from "@/lib/benchmark";
 import { prisma } from "@/lib/db";
-import { getBenchmarkForRoute } from "@/lib/queries";
+import { indexLabel } from "@/lib/format";
+import {
+  countRecentAlerts,
+  getAllIndexSeries,
+  getBenchmarkForRoute,
+  getPortSnapshots,
+  getTopAlert,
+  type IndexSeries,
+} from "@/lib/queries";
+import { buildMarketSummary } from "@/lib/summary";
 import { ahpEvaluateSchema, assertKnownCriteria, formatZodIssues } from "@/lib/validation";
 import type { Prisma } from "@/generated/prisma/client";
+
+/** Same label shape the dashboard uses, so a bullet reads the same way in both places. */
+function seriesLabel(s: IndexSeries): string {
+  return s.routeCode === "COMPOSITE"
+    ? indexLabel(s.indexCode)
+    : `${indexLabel(s.indexCode)} ${routeLabel(s.routeCode)}`;
+}
 
 /**
  * Evaluate a carrier decision and, by default, persist it.
@@ -61,24 +77,53 @@ export async function POST(request: Request): Promise<Response> {
   // Benchmark each quote against the market as it stands right now. The
   // snapshot is frozen into the decision log so the memo stays reproducible.
   const benchmark = await getBenchmarkForRoute(payload.routeCode);
-  const benchmarkSnapshot = benchmark
-    ? {
-        capturedAt: new Date().toISOString(),
-        indexCode: "WCI",
-        routeCode: benchmark.routeCode,
-        isFallbackLane: benchmark.isFallback,
-        marketUsdPerFeu: benchmark.value,
-        marketPeriodDate: benchmark.periodDate.toISOString(),
-        quotes: quotes.map((quote) => ({
+
+  // Same market-situation bullets the dashboard shows, frozen at save time
+  // for the same reason the benchmark is: a memo read six weeks later should
+  // describe the market as it was on the day of the call, not as it is now.
+  // Nothing here required new data entry — it's the same rule-based reading
+  // of data already in the system (indices, port risk, disruption alerts).
+  const [allSeries, ports, alertCount7d, topAlert] = await Promise.all([
+    getAllIndexSeries(),
+    getPortSnapshots(),
+    countRecentAlerts(7),
+    getTopAlert(7),
+  ]);
+  const marketBullets = buildMarketSummary({
+    indices: allSeries.map((s) => ({
+      indexCode: s.indexCode,
+      label: seriesLabel(s),
+      unit: s.unit,
+      metrics: s.metrics,
+    })),
+    ports: ports
+      .filter((p) => p.avgWaitDays !== null && p.riskLevel !== null)
+      .map((p) => ({ name: p.name, avgWaitDays: p.avgWaitDays!, riskLevel: p.riskLevel! })),
+    alertCount7d,
+    topAlertHeadline: topAlert?.title ?? null,
+  });
+
+  const benchmarkSnapshot = {
+    capturedAt: new Date().toISOString(),
+    indexCode: "WCI",
+    routeCode: benchmark?.routeCode ?? null,
+    isFallbackLane: benchmark?.isFallback ?? null,
+    marketUsdPerFeu: benchmark?.value ?? null,
+    marketPeriodDate: benchmark?.periodDate.toISOString() ?? null,
+    quotes: benchmark
+      ? quotes.map((quote) => ({
           id: quote.id,
           carrierName: quote.carrierName,
           ...compareToMarket(perFeuRate(quote), benchmark.value, {
             routeCode: benchmark.routeCode,
             marketPeriodDate: benchmark.periodDate,
           }),
-        })),
-      }
-    : null;
+        }))
+      : [],
+    marketBullets,
+    alertCount7d,
+    topAlertHeadline: topAlert?.title ?? null,
+  };
 
   const winner = result.ranking[0];
 
@@ -109,7 +154,7 @@ export async function POST(request: Request): Promise<Response> {
       isConsistent: result.isConsistent,
       alternativeScores: result.ranking as unknown as Prisma.InputJsonValue,
       winnerCarrier: winner?.label ?? "",
-      benchmarkSnapshot: (benchmarkSnapshot ?? undefined) as Prisma.InputJsonValue | undefined,
+      benchmarkSnapshot: benchmarkSnapshot as unknown as Prisma.InputJsonValue,
 
       // Persisted from the validated payload rather than the AHP-facing
       // projection: containerType and validUntil are record-keeping fields,
