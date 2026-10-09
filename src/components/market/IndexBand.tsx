@@ -1,12 +1,11 @@
 import { Sparkline } from "./Sparkline";
+import { DataMeta } from "@/components/chrome/DataMeta";
 import type { IndexSeries } from "@/lib/queries";
 import {
   formatDelta,
   formatIndexValue,
   formatThb,
   indexLabel,
-  relativeDaysTh,
-  SOURCE_LABELS,
   unitHasUsdValue,
   unitSuffix,
 } from "@/lib/format";
@@ -82,6 +81,12 @@ function IndexCell({
         <span className="label">{series.routeCode}</span>
       </div>
 
+      {series.indexCode === "WCI" && series.routeCode === "COMPOSITE" && (
+        <p className="mt-0.5 text-micro text-ink-faint">
+          Market Reference — ค่าเฉลี่ย 8 เส้นทางหลักทั่วโลก ไม่ใช่ราคาของเส้นทางใดเส้นทางหนึ่ง
+        </p>
+      )}
+
       <div className="mt-3 flex items-end justify-between gap-3">
         <p className="fig text-figure leading-none font-semibold">
           {latest ? formatIndexValue(latest.value, unit) : "—"}
@@ -109,10 +114,9 @@ function IndexCell({
         </div>
       </dl>
 
-      <p className="mt-2.5 flex flex-wrap items-baseline gap-x-2 text-micro text-ink-faint">
-        {latest && <span>{relativeDaysTh(latest.periodDate)}</span>}
-        <span>{SOURCE_LABELS[series.source] ?? series.source}</span>
-      </p>
+      <div className="mt-2.5">
+        <DataMeta date={latest?.periodDate ?? null} source={series.source} isSample={series.isSample} />
+      </div>
 
       {/* Two things a reader must not have to infer: that the number is old,
           and that it is unusual. */}

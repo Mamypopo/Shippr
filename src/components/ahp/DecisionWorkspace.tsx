@@ -27,6 +27,7 @@ const SCENARIO_OPTIONS = [
 import { CarrierCriterionChart } from "./CarrierCriterionChart";
 import { ConsistencyBadge } from "./ConsistencyBadge";
 import { PairwiseMatrix } from "./PairwiseMatrix";
+import { ScoringMethodology } from "./ScoringMethodology";
 import { ScoreRanking } from "./ScoreRanking";
 
 export interface MarketBenchmark {
@@ -221,7 +222,7 @@ export function DecisionWorkspace({
 
         <p className="mt-3 text-micro text-ink-faint">
           {benchmark
-            ? `เทียบกับ Drewry WCI ${ROUTE_LABELS[benchmark.routeCode] ?? benchmark.routeCode} ที่ $${Math.round(benchmark.value).toLocaleString("en-US")}/FEU อ่านค่าเมื่อ ${benchmark.periodDate}`
+            ? `Market Reference: Drewry WCI ${ROUTE_LABELS[benchmark.routeCode] ?? benchmark.routeCode} ที่ $${Math.round(benchmark.value).toLocaleString("en-US")}/FEU อ่านค่าเมื่อ ${benchmark.periodDate} — ค่าอ้างอิงตลาดโดยรวม ไม่ใช่ราคาที่ประกาศเฉพาะเส้นทางของ shipment นี้`
             : "ยังไม่มีค่าระวางตลาดในระบบ จะยังเทียบราคากับตลาดให้ไม่ได้"}
         </p>
       </section>
@@ -332,6 +333,8 @@ export function DecisionWorkspace({
         onRemove={handleRemove}
         onAdd={handleAdd}
       />
+
+      <ScoringMethodology />
 
       <div className="grid grid-cols-1 gap-4 xl:grid-cols-[1fr_1fr]">
         <PairwiseMatrix

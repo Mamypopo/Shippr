@@ -332,12 +332,13 @@ export default async function MemoPage(props: PageProps<"/decisions/[id]/memo">)
 
       {snapshot?.marketUsdPerFeu && (
         <section className="mt-6">
-          <h2 className="text-base">เทียบกับค่าระวางตลาด</h2>
+          <h2 className="text-base">เทียบกับค่าระวางตลาด (Market Reference)</h2>
           <p className="mt-2 max-w-[68ch] text-small leading-relaxed text-ink-soft">
             อ้างอิง Drewry WCI {routeLabel(snapshot.routeCode)} ที่{" "}
             <span className="fig">{formatUsd(snapshot.marketUsdPerFeu)}</span>/FEU อ่านค่าเมื่อ{" "}
             {String(snapshot.marketPeriodDate ?? "").slice(0, 10)} ตัวเลขนี้ถูกบันทึกไว้ ณ
-            วันที่ตัดสินใจ จึงสะท้อนภาวะตลาดในวันนั้นแม้อ่านเอกสารนี้ภายหลัง
+            วันที่ตัดสินใจ จึงสะท้อนภาวะตลาดในวันนั้นแม้อ่านเอกสารนี้ภายหลัง — เป็นค่าอ้างอิงตลาดโดยรวม
+            ไม่ใช่ราคาที่ประกาศเฉพาะสำหรับเส้นทางของ shipment นี้
           </p>
           <ul className="mt-2 text-small">
             {(snapshot.quotes ?? []).map((entry) => (

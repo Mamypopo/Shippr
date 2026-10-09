@@ -13,13 +13,24 @@ function supplyColor(level: SupplyLevel): string {
   return "var(--color-ink-faint)";
 }
 
-function Badge({ label, value, color }: { label: string; value: string; color: string }) {
+function Badge({
+  label,
+  value,
+  color,
+  reason,
+}: {
+  label: string;
+  value: string;
+  color: string;
+  reason?: string;
+}) {
   return (
     <div className="border-t border-line p-3 first:border-t-0 sm:border-t-0 sm:border-l sm:first:border-l-0">
       <p className="label">{label}</p>
       <p className="mt-1 text-small font-medium" style={{ color }}>
         {value}
       </p>
+      {reason && <p className="mt-0.5 text-micro leading-snug text-ink-faint">{reason}</p>}
     </div>
   );
 }
@@ -34,7 +45,8 @@ function Badge({ label, value, color }: { label: string; value: string; color: s
  * a person reads before comparing carriers, not a sixth thing being weighed.
  */
 export function MarketSituationPanel({ situation }: { situation: MarketSituation }) {
-  const { demand, supply, freightRate, geopoliticalRisk, weatherRisk, routeDisruption, impact } = situation;
+  const { demand, supply, freightRate, geopoliticalRisk, weatherRisk, routeDisruption, impact, impactReasons } =
+    situation;
 
   return (
     <section className="panel" aria-label="สถานการณ์ตลาด">
@@ -63,10 +75,30 @@ export function MarketSituationPanel({ situation }: { situation: MarketSituation
         <h3 className="text-small font-medium">Market Impact</h3>
       </div>
       <div className="grid grid-cols-2 sm:grid-cols-4">
-        <Badge label="Freight Rate Risk" value={LEVEL_LABELS[impact.freightRateRisk]} color={levelColor(impact.freightRateRisk)} />
-        <Badge label="Capacity / Space Risk" value={LEVEL_LABELS[impact.capacitySpaceRisk]} color={levelColor(impact.capacitySpaceRisk)} />
-        <Badge label="Transit Time Risk" value={LEVEL_LABELS[impact.transitTimeRisk]} color={levelColor(impact.transitTimeRisk)} />
-        <Badge label="Schedule Risk" value={LEVEL_LABELS[impact.scheduleRisk]} color={levelColor(impact.scheduleRisk)} />
+        <Badge
+          label="Freight Rate Risk"
+          value={LEVEL_LABELS[impact.freightRateRisk]}
+          color={levelColor(impact.freightRateRisk)}
+          reason={impactReasons.freightRateRisk}
+        />
+        <Badge
+          label="Capacity / Space Risk"
+          value={LEVEL_LABELS[impact.capacitySpaceRisk]}
+          color={levelColor(impact.capacitySpaceRisk)}
+          reason={impactReasons.capacitySpaceRisk}
+        />
+        <Badge
+          label="Transit Time Risk"
+          value={LEVEL_LABELS[impact.transitTimeRisk]}
+          color={levelColor(impact.transitTimeRisk)}
+          reason={impactReasons.transitTimeRisk}
+        />
+        <Badge
+          label="Schedule Risk"
+          value={LEVEL_LABELS[impact.scheduleRisk]}
+          color={levelColor(impact.scheduleRisk)}
+          reason={impactReasons.scheduleRisk}
+        />
       </div>
 
       <p className="border-t border-line px-4 py-2.5 text-micro leading-relaxed text-ink-faint">

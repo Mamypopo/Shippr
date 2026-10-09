@@ -1,6 +1,7 @@
 import Link from "next/link";
 
 import { IndexBand } from "@/components/market/IndexBand";
+import { MarketSituationPanel } from "@/components/market/MarketSituationPanel";
 import { MarketSummary, type HeadlineFigure } from "@/components/market/MarketSummary";
 import { DisruptionList } from "@/components/news/DisruptionList";
 import { LiveShipMap } from "@/components/ports/LiveShipMap";
@@ -8,9 +9,11 @@ import { PortBayPlan } from "@/components/ports/PortBayPlan";
 import { WindyEmbed } from "@/components/ports/WindyEmbed";
 import { formatDelta, formatIndexValue, indexLabel, thaiFullDate, unitSuffix } from "@/lib/format";
 import { fetchUsdThbRate } from "@/lib/fx";
+import { assessMarketSituation } from "@/lib/market-situation";
 import {
   countRecentAlerts,
   getAllIndexSeries,
+  getMarketSituationInputs,
   getPortSnapshots,
   getRecentNews,
   getTopAlert,
@@ -23,14 +26,17 @@ import { routeLabel } from "@/lib/benchmark";
 export const dynamic = "force-dynamic";
 
 export default async function DashboardPage() {
-  const [series, ports, news, alertCount7d, topAlert, usdThbRate] = await Promise.all([
+  const [series, ports, news, alertCount7d, topAlert, usdThbRate, situationInputs] = await Promise.all([
     getAllIndexSeries(),
     getPortSnapshots(),
     getRecentNews(20),
     countRecentAlerts(7),
     getTopAlert(7),
     fetchUsdThbRate(),
+    getMarketSituationInputs(),
   ]);
+
+  const situation = assessMarketSituation(situationInputs);
 
   const summary = buildMarketSummary({
     indices: series.map((s) => ({
@@ -53,6 +59,8 @@ export default async function DashboardPage() {
         headline={buildHeadline(series)}
         asOf={thaiFullDate(new Date())}
       />
+
+      <MarketSituationPanel situation={situation} />
 
       {/* The mosaic leads: "what is blocked right now" is the question this
           page exists to answer at a glance, and it is the one thing here that

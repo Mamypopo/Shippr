@@ -170,19 +170,26 @@ function QuoteColumn({
           here read as if Free Time were a discount applied to the headline
           rate, which made the AHP cost criterion look like it worked
           differently than it does. It's still the same effective cost
-          feeding the ranking below; only the display changed. */}
+          feeding the ranking below; only the display changed.
+
+          Before an ocean freight rate is typed in, these numbers are not
+          real — grossCostUsd is 0 and effectiveCostUsd floors at $1, which
+          read as if $1 were an actual quoted cost. "ยังไม่มีข้อมูล" instead
+          of a number that looks precise but is really just an unfilled form. */}
       <dl className="mt-1 grid grid-cols-3 gap-x-2 border-t border-line pt-2 text-micro text-ink-soft">
         <div>
           <dt className="text-ink-faint">ต้นทุน (Ocean + Local)</dt>
-          <dd className="fig mt-0.5">{formatUsd(cost.grossCostUsd)}</dd>
+          <dd className="fig mt-0.5">{quote.oceanFreightUsd > 0 ? formatUsd(cost.grossCostUsd) : "ยังไม่มีข้อมูล"}</dd>
         </div>
         <div>
           <dt className="text-ink-faint">มูลค่า Free Time</dt>
-          <dd className="fig mt-0.5">{formatUsd(cost.freeTimeCreditUsd)}</dd>
+          <dd className="fig mt-0.5">{quote.oceanFreightUsd > 0 ? formatUsd(cost.freeTimeCreditUsd) : "ยังไม่มีข้อมูล"}</dd>
         </div>
         <div>
           <dt className="text-ink-faint">ต้นทุนที่ใช้เปรียบเทียบ</dt>
-          <dd className="fig mt-0.5 font-medium text-ink">{formatUsd(cost.effectiveCostUsd)}</dd>
+          <dd className="fig mt-0.5 font-medium text-ink">
+            {quote.oceanFreightUsd > 0 ? formatUsd(cost.effectiveCostUsd) : "ยังไม่มีข้อมูล"}
+          </dd>
         </div>
       </dl>
 

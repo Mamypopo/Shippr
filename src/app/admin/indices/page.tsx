@@ -2,10 +2,11 @@ import Link from "next/link";
 
 import { getSessionUser } from "@/lib/auth";
 import { prisma, toNumber } from "@/lib/db";
-import { formatIndexValue, relativeDaysTh, SOURCE_LABELS, thaiShortDate } from "@/lib/format";
+import { formatIndexValue, relativeDaysTh, thaiShortDate } from "@/lib/format";
 import { latestRunsBySource, type LatestRun } from "@/lib/ingest";
 import { routeLabel } from "@/lib/benchmark";
 import { ManualIndexForm } from "./ManualIndexForm";
+import { DataMeta } from "@/components/chrome/DataMeta";
 import { RunIngestionButton } from "@/components/chrome/RunIngestionButton";
 
 export const dynamic = "force-dynamic";
@@ -26,6 +27,7 @@ export default async function AdminIndicesPage() {
         value: true,
         unit: true,
         source: true,
+        rawSnapshot: true,
       },
     }),
     latestRunsBySource(),
@@ -87,8 +89,12 @@ export default async function AdminIndicesPage() {
                   <td className="fig border-l border-t border-line px-3 py-2 text-right">
                     {formatIndexValue(toNumber(row.value), row.unit)}
                   </td>
-                  <td className="border-l border-t border-line px-3 py-2 text-micro text-ink-faint">
-                    {SOURCE_LABELS[row.source] ?? row.source}
+                  <td className="border-l border-t border-line px-3 py-2">
+                    <DataMeta
+                      date={null}
+                      source={row.source}
+                      isSample={(row.rawSnapshot as { demo?: boolean } | null)?.demo === true}
+                    />
                   </td>
                 </tr>
               ))}

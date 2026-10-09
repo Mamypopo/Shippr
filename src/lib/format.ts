@@ -80,3 +80,25 @@ export const SOURCE_LABELS: Record<string, string> = {
   YAHOO: "Yahoo Finance",
   CSV_IMPORT: "นำเข้า CSV",
 };
+
+/**
+ * Live / Manual / Sample — the one distinction that matters more than the
+ * specific source: is this a real figure (fetched automatically or typed in
+ * by a person) or seed data (`db:seed -- --demo`) that should never be
+ * mistaken for either. Collapsing four `DataSource` values down to three
+ * keeps the question a reader actually has ("can I trust this number?")
+ * separate from "which pipeline wrote it," which `SOURCE_LABELS` already answers.
+ */
+export type ProvenanceKey = "LIVE" | "MANUAL" | "SAMPLE";
+
+export function provenanceFor(source: string, isSample = false): ProvenanceKey {
+  if (isSample) return "SAMPLE";
+  if (source === "MANUAL" || source === "CSV_IMPORT") return "MANUAL";
+  return "LIVE";
+}
+
+export const PROVENANCE_LABELS: Record<ProvenanceKey, string> = {
+  LIVE: "Live",
+  MANUAL: "Manual",
+  SAMPLE: "Sample",
+};

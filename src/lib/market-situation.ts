@@ -47,6 +47,8 @@ export interface MarketSituation {
   weatherRisk: Level;
   routeDisruption: Level;
   impact: MarketImpact;
+  /** One sentence per Market Impact field, naming the factor(s) that actually drove it — a level with no visible cause isn't actionable. */
+  impactReasons: Record<keyof MarketImpact, string>;
 }
 
 function countByLevel(count: number, highAt: number): Level {
@@ -100,6 +102,45 @@ export function assessMarketSituation(input: MarketSituationInput): MarketSituat
   const scheduleRisk: Level =
     supply === "TIGHT" || routeDisruption === "HIGH" ? "HIGH" : routeDisruption === "LOW" ? "LOW" : "NORMAL";
 
+  const impactReasons: Record<keyof MarketImpact, string> = {
+    freightRateRisk:
+      rateLevel === "HIGH"
+        ? `ค่าระวางขยับขึ้น ${input.rateWowPct?.toFixed(1)}% เทียบสัปดาห์ก่อน`
+        : demand === "HIGH" && supply === "TIGHT"
+          ? "Demand สูงพร้อมกับ Supply ตึงตัว"
+          : rateLevel === "LOW"
+            ? `ค่าระวางลดลง ${input.rateWowPct?.toFixed(1)}% เทียบสัปดาห์ก่อน`
+            : "ค่าระวางเคลื่อนไหวในช่วงปกติ",
+    capacitySpaceRisk:
+      supply === "TIGHT"
+        ? highPortCount > 0
+          ? "มีท่าเรือแออัดหนักอยู่ในกลุ่มที่ติดตาม"
+          : `มีข่าวยกเลิกเที่ยวเรือ (CAPACITY) ${input.newsCounts.capacity} รายการในช่วงที่ติดตาม`
+        : supply === "EXCESS"
+          ? "ไม่มีสัญญาณขาดแคลนระวางหรือท่าเรือแออัด"
+          : "ยังไม่มีสัญญาณชัดเจนทั้งสองทาง",
+    transitTimeRisk:
+      routeDisruption === "HIGH" && weatherRisk === "HIGH"
+        ? "ทั้งเส้นทาง/ท่าเรือติดขัดและสภาพอากาศเป็นความเสี่ยงพร้อมกัน"
+        : routeDisruption === "HIGH"
+          ? "มีความเสี่ยงเส้นทาง/ท่าเรือติดขัดจากข่าวหรือความแออัด"
+          : weatherRisk === "HIGH"
+            ? "มีข่าวสภาพอากาศความเสี่ยงสูงซ้ำกันหลายรายการ"
+            : routeDisruption === "LOW" && weatherRisk === "LOW"
+              ? "ไม่มีข่าวเส้นทางติดขัดหรือสภาพอากาศผิดปกติ"
+              : "มีสัญญาณบางส่วน ยังไม่ถึงระดับสูง",
+    scheduleRisk:
+      supply === "TIGHT" && routeDisruption === "HIGH"
+        ? "ทั้งระวางตึงตัวและเส้นทางติดขัดพร้อมกัน"
+        : supply === "TIGHT"
+          ? "ระวางตึงตัว ซึ่งมักมาพร้อมการยกเลิก/ปรับตารางเที่ยวเรือ"
+          : routeDisruption === "HIGH"
+            ? "เส้นทาง/ท่าเรือติดขัด ซึ่งมักทำให้ตารางเรือคลาดเคลื่อน"
+            : routeDisruption === "LOW"
+              ? "ไม่มีสัญญาณที่จะทำให้ตารางเรือคลาดเคลื่อน"
+              : "มีสัญญาณบางส่วน ยังไม่ถึงระดับสูง",
+  };
+
   return {
     demand,
     supply,
@@ -108,6 +149,7 @@ export function assessMarketSituation(input: MarketSituationInput): MarketSituat
     weatherRisk,
     routeDisruption,
     impact: { freightRateRisk, capacitySpaceRisk, transitTimeRisk, scheduleRisk },
+    impactReasons,
   };
 }
 

@@ -17,6 +17,8 @@ export interface IndexSeries {
   routeCode: string;
   unit: string;
   source: string;
+  /** True when the latest reading is demo-seed data (`db:seed -- --demo`), not a real figure. */
+  isSample: boolean;
   points: IndexPoint[];
   metrics: IndexMetrics;
 }
@@ -31,7 +33,7 @@ export async function getIndexSeries(
     where: { indexCode, routeCode },
     orderBy: { periodDate: "desc" },
     take: limit,
-    select: { periodDate: true, value: true, unit: true, source: true },
+    select: { periodDate: true, value: true, unit: true, source: true, rawSnapshot: true },
   });
 
   if (rows.length === 0) return null;
@@ -40,11 +42,14 @@ export async function getIndexSeries(
     .map((r) => ({ periodDate: r.periodDate, value: toNumber(r.value) }))
     .reverse();
 
+  const latestSnapshot = rows[0].rawSnapshot as { demo?: boolean } | null;
+
   return {
     indexCode,
     routeCode,
     unit: rows[0].unit,
     source: rows[0].source,
+    isSample: latestSnapshot?.demo === true,
     points,
     metrics: computeMetrics(points),
   };
@@ -78,6 +83,8 @@ export interface PortSnapshot {
   observedOn: Date | null;
   source: string | null;
   note: string | null;
+  /** True when the latest reading is demo-seed data (`db:seed -- --demo`), not a real figure. */
+  isSample: boolean;
 }
 
 /**
@@ -110,6 +117,7 @@ export async function getPortSnapshots(): Promise<PortSnapshot[]> {
       observedOn: latest?.observedOn ?? null,
       source: latest?.source ?? null,
       note: latest?.note ?? null,
+      isSample: latest?.note?.includes("demo seed") ?? false,
     };
   });
 }
