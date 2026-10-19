@@ -116,6 +116,7 @@ export const trackedVesselSchema = z.object({
   // than "any 9-digit number" on purpose, to catch an obvious typo early.
   mmsi: z.number().int().min(200_000_000).max(799_999_999),
   label: z.string().min(1, "ใส่ชื่อ/คำอธิบายสั้นๆ ว่าติดตามไปทำไม").max(200),
+  carrierName: z.string().max(120).nullish(),
   destinationPortUnlocode: z.string().min(3).max(10).nullish(),
 });
 

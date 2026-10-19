@@ -30,7 +30,7 @@ export async function POST(request: Request): Promise<Response> {
     );
   }
 
-  const { mmsi, label, destinationPortUnlocode } = parsed.data;
+  const { mmsi, label, carrierName, destinationPortUnlocode } = parsed.data;
 
   let destinationPortId: string | null = null;
   if (destinationPortUnlocode) {
@@ -53,13 +53,13 @@ export async function POST(request: Request): Promise<Response> {
     // erroring — the operator asking to track it again is the whole point.
     const vessel = await prisma.trackedVessel.update({
       where: { mmsi },
-      data: { label, destinationPortId, isActive: true, enteredById: auth.user.id },
+      data: { label, carrierName: carrierName ?? null, destinationPortId, isActive: true, enteredById: auth.user.id },
     });
     return Response.json({ saved: true, vessel, resumed: !existing.isActive }, { status: 200 });
   }
 
   const vessel = await prisma.trackedVessel.create({
-    data: { mmsi, label, destinationPortId, enteredById: auth.user.id },
+    data: { mmsi, label, carrierName: carrierName ?? null, destinationPortId, enteredById: auth.user.id },
   });
 
   return Response.json({ saved: true, vessel, resumed: false }, { status: 201 });

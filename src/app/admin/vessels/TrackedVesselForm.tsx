@@ -3,6 +3,7 @@
 import { useState } from "react";
 import { useRouter } from "next/navigation";
 
+import { CarrierNameField } from "@/components/chrome/CarrierNameField";
 import { useToast } from "@/components/chrome/Toast";
 
 interface PortOption {
@@ -16,6 +17,7 @@ export function TrackedVesselForm({ ports }: { ports: PortOption[] }) {
 
   const [mmsi, setMmsi] = useState("");
   const [label, setLabel] = useState("");
+  const [carrierName, setCarrierName] = useState("");
   const [destinationPortUnlocode, setDestinationPortUnlocode] = useState("");
   const [saving, setSaving] = useState(false);
 
@@ -30,6 +32,7 @@ export function TrackedVesselForm({ ports }: { ports: PortOption[] }) {
         body: JSON.stringify({
           mmsi: Number(mmsi),
           label,
+          carrierName: carrierName || null,
           destinationPortUnlocode: destinationPortUnlocode || null,
         }),
       });
@@ -45,6 +48,7 @@ export function TrackedVesselForm({ ports }: { ports: PortOption[] }) {
       toast.success(body.resumed ? `กลับมาติดตามเรือ MMSI ${mmsi} อีกครั้ง` : `เริ่มติดตามเรือ MMSI ${mmsi} แล้ว`);
       setMmsi("");
       setLabel("");
+      setCarrierName("");
       setDestinationPortUnlocode("");
       router.refresh();
     } catch {
@@ -63,7 +67,7 @@ export function TrackedVesselForm({ ports }: { ports: PortOption[] }) {
         เมื่อเรือส่งสัญญาณ
       </p>
 
-      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-3">
+      <div className="mt-4 grid grid-cols-1 gap-3 sm:grid-cols-2 xl:grid-cols-4">
         <label className="block">
           <span className="block text-micro text-ink-faint">MMSI (เลข 9 หลัก)</span>
           <input
@@ -87,6 +91,8 @@ export function TrackedVesselForm({ ports }: { ports: PortOption[] }) {
             required
           />
         </label>
+
+        <CarrierNameField value={carrierName} onChange={setCarrierName} label="สายเรือ (ถ้าทราบ)" />
 
         <label className="block">
           <span className="block text-micro text-ink-faint">ท่าเรือปลายทาง (ถ้ามี)</span>

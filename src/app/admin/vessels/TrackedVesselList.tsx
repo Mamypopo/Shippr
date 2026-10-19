@@ -4,6 +4,7 @@ import { useState } from "react";
 import { useRouter } from "next/navigation";
 
 import { useToast } from "@/components/chrome/Toast";
+import { carrierTrackingUrl } from "@/lib/carriers";
 import { relativeDaysTh } from "@/lib/format";
 import type { TrackedVesselView } from "@/lib/queries";
 import { estimateEtaDays, haversineKm } from "@/lib/vessel";
@@ -71,6 +72,7 @@ export function TrackedVesselList({ vessels }: { vessels: TrackedVesselView[] })
           <tr className="text-micro text-ink-faint">
             <th scope="col" className="border-b border-line px-3 py-2 text-left">ชื่อ/คำอธิบาย</th>
             <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">MMSI</th>
+            <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">สายเรือ</th>
             <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">ปลายทาง</th>
             <th scope="col" className="border-b border-l border-line px-3 py-2 text-left">ตำแหน่งล่าสุด</th>
             <th scope="col" className="border-b border-l border-line px-3 py-2"></th>
@@ -81,6 +83,9 @@ export function TrackedVesselList({ vessels }: { vessels: TrackedVesselView[] })
             <tr key={v.id}>
               <td className="border-t border-line px-3 py-2">{v.label}</td>
               <td className="fig border-l border-t border-line px-3 py-2">{v.mmsi}</td>
+              <td className="border-l border-t border-line px-3 py-2">
+                <CarrierCell carrierName={v.carrierName} />
+              </td>
               <td className="border-l border-t border-line px-3 py-2">
                 {v.destinationPort?.name ?? "—"}
               </td>
@@ -102,6 +107,24 @@ export function TrackedVesselList({ vessels }: { vessels: TrackedVesselView[] })
         </tbody>
       </table>
     </section>
+  );
+}
+
+/**
+ * A carrier's own shipment-tracking page, independent of AIS entirely — a
+ * far more reliable way to check a shipment's status in waters aisstream.io
+ * barely covers than waiting on a position report that may never arrive.
+ */
+function CarrierCell({ carrierName }: { carrierName: string | null }) {
+  if (!carrierName) return <span className="text-ink-faint">—</span>;
+
+  const url = carrierTrackingUrl(carrierName);
+  if (!url) return <span>{carrierName}</span>;
+
+  return (
+    <a href={url} target="_blank" rel="noreferrer" className="underline underline-offset-2 hover:text-ink">
+      {carrierName} ↗
+    </a>
   );
 }
 

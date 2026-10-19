@@ -1,6 +1,7 @@
 "use client";
 
 import { carrierKey, type CarrierStats } from "@/lib/booking-stats";
+import { CarrierNameField } from "@/components/chrome/CarrierNameField";
 import { computeCost, type QuoteInput } from "@/lib/cost";
 import { formatUsd } from "@/lib/format";
 
@@ -119,15 +120,12 @@ function QuoteColumn({
         )}
       </div>
 
-      <Field label="สายเรือ">
-        <input
-          type="text"
+      <div className="mt-3">
+        <CarrierNameField
           value={quote.carrierName}
-          onChange={(e) => onChange(quote.id, { carrierName: e.target.value })}
-          placeholder="เช่น Maersk"
-          className="w-full px-2 py-1 text-small"
+          onChange={(v) => onChange(quote.id, { carrierName: v })}
         />
-      </Field>
+      </div>
 
       <Field label="ชื่อ service">
         <input

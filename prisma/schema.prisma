@@ -296,6 +296,10 @@ model TrackedVessel {
   mmsi              Int      @unique
   /// Free text, e.g. "ตู้ส่งลูกค้า ABC — PO 1234" — a worklist label, not a vessel registry entry.
   label             String
+  /// The carrier operating this vessel — lets the admin page link out to that
+  /// carrier's own shipment tracking, which doesn't depend on AIS coverage at
+  /// all, unlike the MarineTraffic/aisstream link.
+  carrierName       String?
   destinationPortId String?
   isActive          Boolean  @default(true)
   enteredById       String?

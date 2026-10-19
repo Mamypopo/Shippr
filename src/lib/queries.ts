@@ -211,6 +211,7 @@ export interface TrackedVesselView {
   id: string;
   mmsi: number;
   label: string;
+  carrierName: string | null;
   destinationPort: { name: string; lat: number | null; lon: number | null } | null;
   latestPosition: {
     lat: number;
@@ -238,6 +239,7 @@ export async function getTrackedVessels(): Promise<TrackedVesselView[]> {
       id: v.id,
       mmsi: v.mmsi,
       label: v.label,
+      carrierName: v.carrierName,
       destinationPort: v.destinationPort,
       latestPosition: latest
         ? {
